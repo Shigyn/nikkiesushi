@@ -16,7 +16,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '1';
+const V = '2';
 if (PROD && COMMANDE.paiement === 'apercu') throw new Error('Mise en ligne : passer COMMANDE.paiement sur "stripe" (ou "sur_place").');
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -229,9 +229,26 @@ const carteVedette = (r, id) => {
   </article>`;
 };
 
+/* Chaque plat a son cadre de vignette, photo ou non : la carte reste
+   alignee, et les cadres vides se rempliront avec les photos du
+   restaurant. En attendant, un pictogramme de la famille du plat. */
+const PICTO = {
+  bento: 'M3 5h18v14H3zm2 2v4h6V7zm8 0v4h6V7zm-8 6v4h6v-4zm8 0v4h6v-4z',
+  roll: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 3.2a5.8 5.8 0 1 1 0 11.6 5.8 5.8 0 0 1 0-11.6zm0 3a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6z',
+  nigiri: 'M4 14.5C4 12 7.6 10 12 10s8 2 8 4.5V17H4zM5 9c2-2.6 4.4-3.8 7-3.8 2.8 0 5.2 1.2 7 3.8-2.2-1-4.5-1.5-7-1.5S7.2 8 5 9z',
+  bol: 'M2 11h20a10 10 0 0 1-6 9.2V21H8v-.8A10 10 0 0 1 2 11zm5-6c1 1 1 2 0 3h-1.5c1-1 1-2 0-3zm4-1c1 1.2 1 2.6 0 4H9.5c1-1.4 1-2.8 0-4zm4 1c1 1 1 2 0 3h-1.5c1-1 1-2 0-3z',
+  poisson: 'M3 12c3-4.6 7-6.4 11-5.6 2.4.5 4.2 2 5.4 3.6L22 8v8l-2.6-2C18.2 15.6 16.4 17 14 17.6 10 18.4 6 16.6 3 12zm11.5-1.8a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z',
+  mochi: 'M7 8a5 5 0 0 1 5 5H2a5 5 0 0 1 5-5zm10 0a5 5 0 0 1 5 5H12a5 5 0 0 1 5-5zM2 14h20v2a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z',
+  verre: 'M6 3h12l-1.6 16.2A2 2 0 0 1 14.4 21H9.6a2 2 0 0 1-2-1.8zm2.2 2 .5 5h6.6l.5-5z',
+};
+const PICTO_CAT = { plateaux: 'bento', box: 'bento', midi: 'bento', 'nikkei-rolls': 'roll', 'maki-rolls': 'roll', 'sushi-tacos': 'nigiri', ceviche: 'bol', poke: 'bol', 'donburi-nouilles': 'bol', entrees: 'bol', sashimi: 'poisson', 'tataki-chirashi': 'poisson', desserts: 'mochi', boissons: 'verre' };
+const vignette = (r, i) => i.photo
+  ? `<div class="plat-vignette">${img(r, i.photo, i.n, { sizes: '96px' })}</div>`
+  : `<div class="plat-vignette vide" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${PICTO[PICTO_CAT[i.cat] || 'bento']}"/></svg></div>`;
+
 const ligneCarte = (r, i) => `
-      <li class="plat${i.photo ? ' plat-photo' : ''}" id="${i.id}">
-        ${i.photo ? `<div class="plat-vignette">${img(r, i.photo, i.n, { sizes: '96px' })}</div>` : ''}
+      <li class="plat" id="${i.id}">
+        ${vignette(r, i)}
         <div class="plat-texte">
           <h3>${esc(i.n)}${i.q ? ` <span class="portion">${esc(i.q)}</span>` : ''}</h3>
           ${badges(i) ? `<p class="badges">${badges(i)}</p>` : ''}
@@ -262,6 +279,7 @@ const modes = (r) => `
 
 const appel = (r, titre = 'Une envie de sushis ?') => `
 <section class="appel">
+  <img class="deco deco-sakura-appel" src="${r}photos/deco-sakura.png" alt="" aria-hidden="true" width="1100" height="760" loading="lazy">
   <div class="cadre appel-in reveler">
     <h2>${titre}</h2>
     <p>Commandez en ligne en deux minutes : livré à Béziers ou prêt à emporter, à l’heure que vous choisissez.</p>
@@ -282,6 +300,7 @@ ajouter('', {
   classe: 'accueil',
   corps: (r) => `
 <section class="hero">
+  <img class="deco deco-sakura-hero" src="${r}photos/deco-sakura.png" alt="" aria-hidden="true" width="1100" height="760">
   <div class="cadre hero-in">
     <div class="hero-texte">
       <p class="surtitre hero-anim">${I.pin} Place de la Madeleine · Béziers</p>
@@ -297,6 +316,7 @@ ajouter('', {
       </div>
     </div>
     <div class="hero-visuel hero-anim">
+      <img class="deco deco-enso" src="${r}photos/deco-enso.png" alt="" aria-hidden="true" width="900" height="891">
       <span class="kanji" aria-hidden="true">日系</span>
       <div class="hero-photo">${img(r, 'nikki-box-terrasse-madeleine', 'La Nikki Box servie en terrasse, face à l’église de la Madeleine à Béziers', { eager: true, sizes: '(min-width: 900px) 42vw, 100vw' })}</div>
       <div class="hero-fiche">
@@ -336,7 +356,7 @@ ajouter('', {
   </div>
 </section>
 
-<section class="section">
+<section class="section section-papier">
   <div class="cadre">
     <div class="tete-section reveler"><p class="surtitre">Ils en parlent</p><h2>${E.note} sur 5, ${E.nbAvis} avis Google</h2></div>
     <div class="avis">${AVIS.map((a) => `
@@ -390,7 +410,7 @@ ajouter('carte/', {
   ${CARTE.map((c) => `
   <section class="categorie" id="${c.id}" aria-labelledby="t-${c.id}">
     <div class="categorie-tete"><h2 id="t-${c.id}">${esc(c.nom)}</h2>${c.intro ? `<p>${esc(c.intro)}</p>` : ''}</div>
-    <ul class="plats">${c.items.map((i) => ligneCarte(r, i)).join('')}
+    <ul class="plats">${c.items.map((i) => ligneCarte(r, { ...i, cat: c.id })).join('')}
     </ul>
   </section>`).join('')}
   <p class="carte-note">Prix TTC. Liste des allergènes disponible au restaurant et par téléphone. L’abus d’alcool est dangereux pour la santé ; vente d’alcool interdite aux mineurs.</p>
