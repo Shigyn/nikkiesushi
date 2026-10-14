@@ -16,7 +16,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '2';
+const V = '3';
 if (PROD && COMMANDE.paiement === 'apercu') throw new Error('Mise en ligne : passer COMMANDE.paiement sur "stripe" (ou "sur_place").');
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -287,6 +287,18 @@ const appel = (r, titre = 'Une envie de sushis ?') => `
   </div>
 </section>`;
 
+/* Le bandeau des saveurs, sous le hero : les mots de la cuisine nikkei,
+   Japon et Perou alternes. Il defile lentement (immobile si le visiteur
+   a coupe les animations). Le texte est double pour boucler sans saut. */
+const MOTS = ['Sushi', 'Ceviche', 'Tataki', 'Leche de tigre', 'Sashimi', 'Maracuja', 'Maki', 'Rocoto', 'Chirashi', 'Choclo', 'Teriyaki', 'Tacos nikkei'];
+const bandeauSaveurs = () => {
+  const suite = MOTS.map((m) => `<span>${esc(m)}</span><i aria-hidden="true"></i>`).join('');
+  return `
+<div class="saveurs" aria-label="Les saveurs de la cuisine nikkei">
+  <div class="saveurs-in"><div>${suite}</div><div aria-hidden="true">${suite}</div></div>
+</div>`;
+};
+
 /* ===================================================================
    PAGES
    =================================================================== */
@@ -327,6 +339,8 @@ ajouter('', {
     </div>
   </div>
 </section>
+
+${bandeauSaveurs()}
 
 <div class="cadre">${modes(r)}</div>
 

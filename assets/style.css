@@ -361,6 +361,20 @@ p { margin: 0 0 1em; }
 .appel > .cadre { position: relative; z-index: 1; }
 .deco-sakura-appel { left: -160px; bottom: -90px; width: 640px; opacity: .45; transform: scaleY(-1) rotate(8deg); }
 
+/* Le bandeau des saveurs, sous le hero. */
+.saveurs { position: relative; z-index: 1; overflow: hidden; border-block: 1px solid var(--ligne-forte); background: linear-gradient(90deg, var(--noir), var(--encre) 50%, var(--noir)); padding: 18px 0; margin-bottom: clamp(34px, 5vw, 56px); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.saveurs-in { display: flex; width: max-content; animation: defile 60s linear infinite; }
+.saveurs-in > div { display: flex; align-items: center; gap: 28px; padding-right: 28px; }
+.saveurs span { font: 600 clamp(1.15rem, 1rem + .6vw, 1.55rem)/1 var(--serif); color: var(--or-clair); white-space: nowrap; }
+.saveurs span:nth-of-type(even) { color: var(--texte); font-style: italic; font-weight: 500; }
+.saveurs i { width: 9px; height: 9px; border-radius: 50%; background: var(--rouge); box-shadow: 0 0 0 3px rgba(200, 50, 47, .22); flex: none; }
+.saveurs:hover .saveurs-in { animation-play-state: paused; }
+@keyframes defile { to { transform: translateX(-50%); } }
+
+/* Un grain tres leger sur tout le site : le noir prend de la matiere,
+   comme une ardoise, au lieu d'etre un aplat d'ecran. */
+body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: .05; background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .95  0 0 0 0 .85  0 0 0 .9 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>"); }
+
 /* La section claire : du papier, de l'encre. Les avis s'y lisent mieux. */
 .section-papier { background: var(--papier); color: var(--papier-encre); }
 .section-papier .surtitre { color: #9a6d1f; }
@@ -435,5 +449,5 @@ p { margin: 0 0 1em; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
   .js .reveler, .js .hero-anim { opacity: 1; transform: none; }
-  .deco-enso { animation: none; }
+  .deco-enso, .saveurs-in { animation: none; }
 }
