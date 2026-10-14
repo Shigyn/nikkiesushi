@@ -236,7 +236,7 @@ p { margin: 0 0 1em; }
 .categorie-tete p { margin: 0; color: var(--pale); font-size: .92rem; }
 .plats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; column-gap: 44px; }
 .plat { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--ligne); align-items: flex-start; scroll-margin-top: 150px; }
-.plat-vignette { width: 84px; height: 84px; border-radius: 12px; overflow: hidden; flex: none; border: 1px solid var(--ligne); }
+.plat-vignette { width: 112px; height: 112px; border-radius: 14px; overflow: hidden; flex: none; border: 1px solid var(--ligne); }
 .plat-vignette img { width: 100%; height: 100%; object-fit: cover; }
 .plat-texte { flex: 1; min-width: 0; }
 .plat h3 { font-size: 1.12rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
@@ -386,8 +386,8 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 
 /* Les vignettes de la carte : un cadre pour chaque plat. */
 .plat-vignette.vide { display: grid; place-items: center; position: relative; background: radial-gradient(circle at 35% 25%, var(--carte-2), var(--encre) 75%); color: var(--or); }
-.plat-vignette.vide::before { content: ''; position: absolute; inset: 9px; background: url(../photos/deco-enso.png) center / contain no-repeat; opacity: .32; }
-.plat-vignette.vide svg { width: 30px; height: 30px; opacity: .75; position: relative; }
+.plat-vignette.vide::before { content: ''; position: absolute; inset: 11px; background: url(../photos/deco-enso.png) center / contain no-repeat; opacity: .32; }
+.plat-vignette.vide svg { width: 38px; height: 38px; opacity: .75; position: relative; }
 
 /* ---------- apparitions ---------- */
 .js .reveler { opacity: 0; transform: translateY(22px); transition: opacity .8s cubic-bezier(.2, .7, .2, 1), transform .8s cubic-bezier(.2, .7, .2, 1); }
@@ -441,7 +441,7 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
   .barre-mobile.cachee { display: none; }
   .vedettes { grid-template-columns: 1fr; }
   .pied-haut { grid-template-columns: 1fr; }
-  .plat-vignette { width: 72px; height: 72px; }
+  .plat-vignette { width: 92px; height: 92px; }
   .panier { width: 100%; border-left: 0; }
   .deux { grid-template-columns: 1fr; }
 }

@@ -16,7 +16,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '3';
+const V = '4';
 if (PROD && COMMANDE.paiement === 'apercu') throw new Error('Mise en ligne : passer COMMANDE.paiement sur "stripe" (ou "sur_place").');
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -243,7 +243,7 @@ const PICTO = {
 };
 const PICTO_CAT = { plateaux: 'bento', box: 'bento', midi: 'bento', 'nikkei-rolls': 'roll', 'maki-rolls': 'roll', 'sushi-tacos': 'nigiri', ceviche: 'bol', poke: 'bol', 'donburi-nouilles': 'bol', entrees: 'bol', sashimi: 'poisson', 'tataki-chirashi': 'poisson', desserts: 'mochi', boissons: 'verre' };
 const vignette = (r, i) => i.photo
-  ? `<div class="plat-vignette">${img(r, i.photo, i.n, { sizes: '96px' })}</div>`
+  ? `<div class="plat-vignette">${img(r, i.photo, i.n, { sizes: '(max-width: 760px) 92px, 112px' })}</div>`
   : `<div class="plat-vignette vide" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${PICTO[PICTO_CAT[i.cat] || 'bento']}"/></svg></div>`;
 
 const ligneCarte = (r, i) => `
