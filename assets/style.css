@@ -461,3 +461,22 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 .confirme h3 { margin: 0; font-family: var(--serif); font-size: 1.9rem; font-weight: 500; }
 .confirme p { margin: 0; color: var(--doux); max-width: 34ch; }
 .confirme .confirme-total { color: var(--texte); font-weight: 600; }
+
+/* Quelques brins de cerisier derriere la carte (Nicolas, 17/10 : « pas beaucoup »).
+   Decoupes de deco-sakura.png ; 6 sur toute la page, en marge, tres discrets. */
+.page-carte .carte { position: relative; isolation: isolate; overflow-x: clip; }
+.page-carte .categorie { position: relative; }
+.page-carte .categorie:nth-of-type(6n+2)::before,
+.page-carte .categorie:nth-of-type(6n+5)::before { content: ''; position: absolute; z-index: -1; pointer-events: none; background: center / contain no-repeat; }
+.page-carte .categorie:nth-of-type(6n+2)::before { background-image: url(../photos/deco-brin-3.png); width: 240px; aspect-ratio: 325 / 142; top: 4px; right: -170px; opacity: .3; transform: rotate(8deg); }
+.page-carte .categorie:nth-of-type(6n+5)::before { background-image: url(../photos/deco-brin-2.png); width: 190px; aspect-ratio: 255 / 260; top: 30%; left: -175px; opacity: .26; transform: rotate(-12deg) scaleX(-1); }
+.page-carte .categorie:nth-of-type(12n+8)::before { background-image: url(../photos/deco-brin-1.png); aspect-ratio: 213 / 154; }
+@media (max-width: 1320px) {
+  .page-carte .categorie:nth-of-type(6n+2)::before { right: -70px; width: 180px; opacity: .22; }
+  .page-carte .categorie:nth-of-type(6n+5)::before { left: -80px; width: 150px; opacity: .2; }
+}
+@media (max-width: 760px) {
+  .page-carte .categorie:nth-of-type(6n+2)::before { right: -60px; width: 130px; opacity: .18; }
+  .page-carte .categorie:nth-of-type(6n+5)::before { left: -60px; width: 110px; opacity: .16; }
+}
+@media (prefers-reduced-motion: no-preference) { .page-carte .categorie::before { transition: opacity .6s; } }
