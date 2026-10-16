@@ -462,6 +462,10 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 .confirme p { margin: 0; color: var(--doux); max-width: 34ch; }
 .confirme .confirme-total { color: var(--texte); font-weight: 600; }
 
-/* Le fond de la carte : une de leurs photos sur ardoise, a 15 % (Nicolas, 17/10).
-   Fixe derriere la page, elle ne gene jamais la lecture des plats. */
-body.page-carte::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: url(../photos/nikkie-truffe-ardoise-1600.webp) center / cover no-repeat; opacity: .15; }
+/* L'en-tete de la carte : deux nigiri saumon sur fond noir (Unsplash, photo-1562158074),
+   a droite du titre, nets, fondus dans le noir (le fondu est dans l'image).
+   La liste des plats reste sur le noir, rien derriere le texte (Nicolas, 17/10). */
+.page-carte .tete-page { overflow: hidden; }
+.page-carte .tete-page::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: min(56%, 900px); z-index: 0; pointer-events: none;
+  background: url(../photos/tete-carte.webp?v=2) right center / cover no-repeat; opacity: .75; }
+@media (max-width: 760px) { .page-carte .tete-page::after { width: 100%; opacity: .2; } }
