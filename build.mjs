@@ -16,7 +16,10 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '4';
+const V = '5';
+// Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
+const STRIPE_PK = process.env.STRIPE_PK || '';
+if (STRIPE_PK) { COMMANDE.paiement = 'stripe'; COMMANDE.stripePk = STRIPE_PK; }
 if (PROD && COMMANDE.paiement === 'apercu') throw new Error('Mise en ligne : passer COMMANDE.paiement sur "stripe" (ou "sur_place").');
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -600,6 +603,33 @@ for (const [ch, o] of PAGES) {
 // La carte pour le panier : ce que commande.js doit savoir de chaque plat.
 const pourPanier = Object.fromEntries(TOUS.map((i) => [i.id, { n: i.n, p: i.p, ...(i.q ? { q: i.q } : {}), ...(i.choix ? { choix: i.choix } : {}), ...(i.midi ? { midi: 1 } : {}), ...(i.photo ? { photo: i.photo } : {}) }]));
 fs.writeFileSync(path.join(ICI, 'assets', 'carte.json'), JSON.stringify(pourPanier));
+// L'espace pro (cuisine + gestion) : page a part, jamais indexee, sans mesure.
+fs.mkdirSync(path.join(ICI, 'espace'), { recursive: true });
+fs.writeFileSync(path.join(ICI, 'espace', 'index.html'), `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Espace pro — Nikkie Sushi</title>
+<meta name="theme-color" content="#0d0b0a"><link rel="icon" type="image/png" href="../photos/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Albert+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css?v=${V}"><link rel="stylesheet" href="../assets/espace.css?v=${V}">
+</head><body>
+<template data-logo><img class="logo" src="../photos/logo-nikkie-sushi.png" alt="Nikkie Sushi" width="520" height="515"></template>
+<div id="app"></div>
+<script>window.LOCWEB_CONFIG = { supabaseUrl: 'https://ibqawtgnucakzdldnitj.supabase.co', supabaseAnonKey: 'sb_publishable_rpLrUo4Cqnfl8zSohDqO0A_Q5Vkj2Hk' }; window.NS_V = '${V}';</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../assets/espace.js?v=${V}" defer></script>
+</body></html>
+`);
+// La version : la tablette la compare pour se mettre a jour HORS service.
+fs.writeFileSync(path.join(ICI, 'espace', 'version.json'), JSON.stringify({ v: V }));
+// La carte du serveur (fonctions ns-*, propres a Nikkie) : c'est elle qui fait foi pour le prix.
+const DOSSIER_NS = path.join(ICI, '..', 'supabase-functions', 'supabase', 'functions', '_ns');
+fs.mkdirSync(DOSSIER_NS, { recursive: true });
+fs.writeFileSync(path.join(DOSSIER_NS, 'ns-carte.ts'), '// Genere par nikkie-sushi/build.mjs — ne pas modifier a la main.\nexport const CARTE: any = ' + JSON.stringify({
+  reglages: { horaires: HORAIRES, livraison: COMMANDE.livraison, retrait: COMMANDE.retrait, pas: COMMANDE.pas, avanceParCreneau: 3 },
+  plats: Object.fromEntries(TOUS.map((i) => [i.id, { n: i.n, p: i.p, ...(i.choix ? { choix: i.choix } : {}), ...(i.midi ? { midi: 1 } : {}) }])),
+  categories: TOUS.map((i) => ({ id: i.id, n: i.n })),
+}) + ';\n');
 fs.writeFileSync(path.join(ICI, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PAGES.filter(([ch]) => !/cgv|confidentialite|mentions/.test(ch)).map(([ch]) => `  <url><loc>${abs(ch)}</loc></url>`).join('\n')}\n</urlset>\n`);
 fs.writeFileSync(path.join(ICI, 'robots.txt'), PROD ? `User-agent: *\nAllow: /\n\nSitemap: ${URL_SITE}sitemap.xml\n` : `# Apercu : pas d'indexation avant la mise en ligne.\nUser-agent: *\nDisallow: /\n`);
 console.log(`${PAGES.length} pages, ${TOUS.length} plats — ${PROD ? 'PRODUCTION' : 'apercu (noindex)'} — paiement : ${COMMANDE.paiement}`);

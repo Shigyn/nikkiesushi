@@ -146,6 +146,7 @@
     else if (ecran === 'infos') rendreInfos();
     else if (ecran === 'recap') rendreRecap();
     else if (ecran === 'apercu') rendreApercu();
+    else if (ecran === 'fini') { ecran = 'panier'; rendrePanier(); }
     corps.scrollTop = 0;
   }
 
@@ -260,6 +261,13 @@
       '<div class="recap"><small>Vos coordonnées</small><span>' + esc(i.nom) + ' · ' + esc(i.tel) + '</span>' + (i.commentaire ? '<span>« ' + esc(i.commentaire) + ' »</span>' : '') + '</div>' +
       '<div class="recap"><small>' + nbArticles() + ' article' + (nbArticles() > 1 ? 's' : '') + '</small><div class="recap-lignes">' +
       etat.panier.map(function (l) { var p = CARTE[l.id]; return '<div><span>' + l.qte + ' × ' + esc(p.n) + (l.choix ? ' (' + esc(l.choix) + ')' : '') + '</span><span>' + euros(p.p * l.qte) + '</span></div>'; }).join('') + '</div></div>';
+    if (CFG.paiement === 'stripe') {
+      corps.insertAdjacentHTML('beforeend', '<div class="paiement-stripe" data-ps><p class="ps-attente">Préparation du paiement sécurisé…</p></div><p class="alerte" data-alerte-paiement hidden></p>');
+      pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-payer disabled>' + ICO.cadenas + ' Payer ' + euros(total) + '</button>' +
+        '<p class="securite">' + ICO.cadenas + ' Paiement sécurisé par Stripe · CB, Visa, Mastercard, Apple Pay, Google Pay</p>';
+      preparerPaiement();
+      return;
+    }
     var libelle = CFG.paiement === 'sur_place' ? 'Envoyer ma commande · ' + euros(total) : 'Payer ' + euros(total) + ' par carte';
     pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-payer>' + (CFG.paiement === 'sur_place' ? ICO.sac : ICO.cadenas) + ' ' + libelle + '</button>' +
       (CFG.paiement === 'sur_place' ? '<p class="securite">Réglé à la livraison ou au retrait.</p>' : '<p class="securite">' + ICO.cadenas + ' Paiement sécurisé par Stripe · Visa, Mastercard, CB, Apple Pay</p>');
@@ -297,7 +305,96 @@
       body: JSON.stringify(corpsJson),
     }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Erreur'); return j; }); });
   }
+  var PAIEMENT = null, stripeJs = null;
+  function chargerStripe() {
+    if (window.Stripe) return Promise.resolve();
+    if (!stripeJs) stripeJs = new Promise(function (ok, ko) {
+      var sc = document.createElement('script'); sc.src = 'https://js.stripe.com/v3/'; sc.onload = ok;
+      sc.onerror = function () { stripeJs = null; ko(new Error('Le module de paiement n’a pas pu se charger. Vérifiez votre connexion.')); };
+      document.head.appendChild(sc);
+    });
+    return stripeJs;
+  }
+  function alertePaiement(t) { var a = $('[data-alerte-paiement]'); if (a) { a.hidden = !t; a.textContent = t || ''; } }
+  function appareil() {
+    var a; try { a = localStorage.getItem('nikkie-appareil'); } catch (x) {}
+    if (!a) { a = 'a' + Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('nikkie-appareil', a); } catch (x) {} }
+    return a;
+  }
+  // L'heure choisie, en vraie date (null = des que possible).
+  function creneauIso() {
+    var c = etat.infos.creneau || '', g = creneaux(etat.infos.mode)[+c.split('|')[0]];
+    if (!g || c.split('|')[1] === 'asap') return null;
+    var d = new Date(g.s.jour); d.setMinutes(+c.split('|')[1]); return d.toISOString();
+  }
+  function demande() {
+    var i = etat.infos;
+    return { action: 'payer', appareil: appareil(), mode: i.mode, adresse: i.adresse || '', cp: i.cp || '', ville: i.ville || '',
+      nom: i.nom, telephone: i.tel, note: i.commentaire || '', creneau: creneauIso(),
+      lignes: etat.panier.map(function (l) { return { id: l.id, choix: l.choix, qte: l.qte }; }) };
+  }
+  function appelNs(corpsJson) {
+    return fetch(LW.supabaseUrl + '/functions/v1/ns-commande', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsJson) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.refus || j.error || 'Le serveur ne répond pas. Réessayez dans un instant.'); return j; }); });
+  }
+  function preparerPaiement() {
+    var d = demande(), cle = JSON.stringify(d);
+    var suite = PAIEMENT && PAIEMENT.cle === cle ? Promise.resolve(PAIEMENT.rep) : appelNs(d).then(function (rep) { PAIEMENT = { cle: cle, rep: rep }; return rep; });
+    suite.then(function (rep) { return chargerStripe().then(function () { monter(rep); }); })
+      .catch(function (e) { var z = $('[data-ps]'); if (z) z.innerHTML = ''; alertePaiement(e.message); });
+  }
+  function monter(rep) {
+    var zone = $('[data-ps]'); if (!zone) return;
+    var st = window.Stripe(CFG.stripePk, rep.stripe_account ? { stripeAccount: rep.stripe_account } : {});
+    var el = st.elements({
+      clientSecret: rep.client_secret, locale: 'fr',
+      fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600&display=swap' }],
+      appearance: { theme: 'night', variables: { colorPrimary: '#d6b264', colorBackground: '#1c1814', colorText: '#f1e9db', colorDanger: '#e0584f', fontFamily: 'Albert Sans, sans-serif', borderRadius: '12px', spacingUnit: '4px' } },
+    });
+    var pe = el.create('payment', { layout: { type: 'tabs' }, wallets: { applePay: 'auto', googlePay: 'auto' } });
+    zone.innerHTML = ''; pe.mount(zone);
+    PAIEMENT.stripe = st; PAIEMENT.elements = el;
+    pe.on('ready', function () { var b = $('[data-payer]'); if (b) b.disabled = false; });
+  }
+  function payerStripe(b) {
+    var rep = PAIEMENT && PAIEMENT.rep; if (!rep || !PAIEMENT.stripe) return;
+    var libelle = b.innerHTML; b.disabled = true; b.textContent = 'Paiement en cours…'; alertePaiement('');
+    try { sessionStorage.setItem('nikkie-paiement', JSON.stringify({ compte: rep.stripe_account, secret: rep.client_secret, commande: rep.commande })); } catch (x) {}
+    PAIEMENT.stripe.confirmPayment({ elements: PAIEMENT.elements, redirect: 'if_required', confirmParams: { return_url: location.origin + location.pathname + '?paiement=retour' } })
+      .then(function (r) {
+        if (r.error) { b.disabled = false; b.innerHTML = libelle; alertePaiement(r.error.message || 'Le paiement n’est pas passé.'); return; }
+        if (['succeeded', 'processing', 'requires_capture'].indexOf(r.paymentIntent.status) >= 0) { PAIEMENT = null; confirmation(rep.commande); }
+        else { b.disabled = false; b.innerHTML = libelle; alertePaiement('Le paiement n’est pas terminé. Réessayez.'); }
+      });
+  }
+  // La commande est payee : elle part en cuisine (ns-stripe-webhook) ; le client voit le recapitulatif.
+  function confirmation(c) {
+    var h = new Date(c.heure_prevue), hmn = h.getHours() + 'h' + String(h.getMinutes()).padStart(2, '0');
+    etat.panier = []; garder(); majBarre();
+    ecran = 'fini'; titre.textContent = 'Commande payée'; retour.hidden = true; bandeau.hidden = true;
+    corps.innerHTML = '<div class="confirme"><div class="confirme-ok" aria-hidden="true">✓</div><p class="confirme-num">Commande n° ' + c.numero + '</p>' +
+      '<h3>' + (c.mode === 'livraison' ? 'Livrée vers ' : 'Prête à ') + hmn + '</h3>' +
+      '<p>' + (c.mode === 'livraison' ? 'Le livreur vous appelle en arrivant. Rien à régler à la porte : c’est déjà payé.' : 'À récupérer au 1 bis rue Porte Olivier, place de la Madeleine. Donnez votre numéro au comptoir.') + '</p>' +
+      '<p class="confirme-total">Payé : ' + euros(c.total_cents / 100) + '</p></div>';
+    pied.innerHTML = '<button type="button" class="bouton bouton-ligne" data-fermer-panier>Fermer</button>';
+  }
+  // Retour d'une banque (3D Secure avec redirection).
+  (function retourBanque() {
+    if (!/[?&]paiement=retour/.test(location.search) || CFG.paiement !== 'stripe') return;
+    var s0; try { s0 = JSON.parse(sessionStorage.getItem('nikkie-paiement') || 'null'); } catch (x) {}
+    var q = new URLSearchParams(location.search);
+    history.replaceState(null, '', location.pathname);
+    if (!s0) return;
+    chargerStripe().then(function () {
+      return window.Stripe(CFG.stripePk, s0.compte ? { stripeAccount: s0.compte } : {}).retrievePaymentIntent(q.get('payment_intent_client_secret') || s0.secret);
+    }).then(function (r) {
+      if (r.paymentIntent && ['succeeded', 'processing'].indexOf(r.paymentIntent.status) >= 0) { ouvrir('panier'); setTimeout(function () { confirmation(s0.commande); }, 120); }
+      else toast('Le paiement n’est pas passé : votre panier vous attend.');
+    }).catch(function () {});
+  })();
+
   function payer(bouton) {
+    if (CFG.paiement === 'stripe') { payerStripe(bouton); return; }
     if (CFG.paiement === 'apercu') { ecran = 'apercu'; rendre(); return; }
     bouton.disabled = true;
     var p = payload(), ici = location.href.split('#')[0];
@@ -318,7 +415,7 @@
       if (ecran === 'infos') { lireForm(); if (verifier()) { ecran = 'recap'; rendre(); } return; }
     }
     var b = e.target.closest('[data-payer]');
-    if (b) payer(b);
+    if (b && !b.disabled) payer(b);
   });
   corps.addEventListener('input', function (e) { if (e.target.closest('[data-form]')) lireForm(); });
   corps.addEventListener('change', function (e) { if (e.target.name === 'creneau') lireForm(); });

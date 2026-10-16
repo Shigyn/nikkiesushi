@@ -451,3 +451,13 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
   .js .reveler, .js .hero-anim { opacity: 1; transform: none; }
   .deco-enso, .saveurs-in { animation: none; }
 }
+
+/* Le paiement integre (Stripe) et la confirmation */
+.paiement-stripe { margin-top: 14px; padding: 14px; border-radius: var(--r); background: var(--encre); border: 1px solid var(--ligne); min-height: 120px; }
+.ps-attente { margin: 0; color: var(--doux); font-size: .92rem; }
+.confirme { display: grid; justify-items: center; gap: 8px; padding: 26px 8px 8px; text-align: center; }
+.confirme-ok { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; color: var(--noir); background: var(--or); }
+.confirme-num { margin: 6px 0 0; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--or); }
+.confirme h3 { margin: 0; font-family: var(--serif); font-size: 1.9rem; font-weight: 500; }
+.confirme p { margin: 0; color: var(--doux); max-width: 34ch; }
+.confirme .confirme-total { color: var(--texte); font-weight: 600; }

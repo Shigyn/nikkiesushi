@@ -1,0 +1,231 @@
+/* ===================================================================
+   Nikkie Sushi — l'espace pro (LocWeb, 2026-10-17)
+   Meme mise en page que l'espace cuisine d'Anas Grill, recopiee a part,
+   aux couleurs de Nikkie (noir et or). style.css est charge avant.
+   =================================================================== */
+:root { --jaune: var(--or-clair); --orange: var(--or); --feu: linear-gradient(135deg, #efdba6, #d6b264 55%, #a8843c); --titre: var(--serif); --etroite: var(--sans); --texte-police: var(--sans); }
+.bouton-feu { background: var(--feu); color: #120e08; border-color: transparent; }
+.code-logo img, .cu-logo img { width: 100%; height: auto; display: block; }
+.code-logo { width: 150px; margin: 0 auto; }
+.cu-mode { margin: 0; color: var(--doux); font-size: .92rem; }
+.cu-mode b { color: var(--or-clair); }
+.cu-livraison b { color: #9fd17a; }
+.ns-ventes { padding: 16px; display: grid; gap: 14px; align-content: start; }
+.ns-ventes .ge-tete h2 { margin: 0; font: 500 1.6rem/1 var(--serif); color: var(--texte); text-transform: none; }
+.ns-ferm { display: grid; gap: 8px; }
+.ns-ferm label { display: grid; gap: 4px; color: var(--doux); font-size: .85rem; }
+.ns-ferm input { min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--ligne-forte); background: #141210; color: var(--texte); color-scheme: dark; font: inherit; }
+.ns-ferm-liste { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--doux); }
+.ns-ferm-liste li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+body.cuisine, body.gerant, body.cuisine-code { background: #0b0b0c; color: var(--texte); min-height: 100svh; }
+body.cuisine::before, body.cuisine::after, body.gerant::before, body.gerant::after, body.cuisine-code::after { display: none; }
+
+/* --- l'ecran du code --- */
+.code { width: min(360px, 100% - 32px); margin: 0 auto; padding: 12vh 0 40px; display: grid; gap: 14px; text-align: center; }
+.code-logo .logo { width: 96px; height: 96px; margin: 0 auto; display: block; }
+.code h1 { margin: 0; font: 400 2.4rem/1 var(--titre); text-transform: uppercase; }
+.code p { margin: 0; color: var(--doux); }
+.code input { text-align: center; font: 600 2rem/1 var(--etroite); letter-spacing: .3em; padding: 16px; border-radius: 16px; border: 1px solid var(--ligne-forte); background: #141210; color: var(--texte); }
+.code input:focus { outline: none; border-color: var(--jaune); }
+.code .bouton { width: 100%; }
+.code-err { min-height: 1.4em; color: #ffb4ac !important; }
+
+/* --- l'en-tete --- */
+.cu-tete { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 12px 16px; background: rgba(11, 11, 12, .96); border-bottom: 1px solid rgba(255, 160, 60, .2); }
+.cu-tete > div:first-child { margin-right: auto; }
+.cu-tete small { font: 700 .74rem/1 var(--etroite); letter-spacing: .14em; text-transform: uppercase; color: var(--orange); }
+.cu-tete h1 { margin: 2px 0 0; font: 400 1.7rem/1 var(--titre); text-transform: uppercase; }
+.cu-bouton { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--ligne-forte); background: #1a1714; color: var(--texte); font: 600 .95rem/1 var(--texte-police); cursor: pointer; }
+.cu-bouton:hover { border-color: var(--orange); }
+.cu-discret { background: transparent; color: var(--doux); }
+.cu-feu { background: var(--feu); color: #1b0d00; border-color: transparent; font-weight: 700; }
+.cu-actif { background: rgba(255, 190, 40, .16); border-color: var(--jaune); color: var(--jaune); }
+.cu-etat, .cu-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font: 700 .8rem/1 var(--etroite); letter-spacing: .08em; text-transform: uppercase; }
+.cu-vert { background: rgba(70, 200, 110, .14); color: #7fe0a0; }
+.cu-jaune { background: rgba(255, 190, 40, .15); color: #ffd36a; }
+.cu-rouge { background: rgba(255, 90, 78, .15); color: #ffb4ac; }
+.cu-alerte { margin: 12px 16px 0; padding: 12px 16px; border-radius: 14px; background: rgba(255, 90, 78, .14); border: 1px solid rgba(255, 90, 78, .5); color: #ffd2cd; font-weight: 600; }
+
+/* --- les colonnes de la cuisine --- */
+.cu-colonnes { display: grid; grid-template-columns: 1.3fr 1fr .8fr; gap: 16px; padding: 16px; align-items: start; }
+.cu-colonnes h2 { margin: 0 0 10px; font: 400 1.3rem/1 var(--titre); text-transform: uppercase; color: var(--jaune); }
+.cu-colonnes h2 span { color: var(--doux); font-size: .9em; }
+.cu-colonnes section > div { display: grid; gap: 12px; }
+.cu-vide { color: var(--pale); margin: 0; }
+.cu-cmd { padding: 14px 16px; border-radius: 16px; background: #171513; border: 1px solid var(--ligne); display: grid; gap: 8px; }
+.cu-cmd.cu-non-imp { border-color: #ff5a4e; box-shadow: 0 0 0 1px rgba(255, 90, 78, .4); }
+.cu-cmd-tete { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.cu-num { font: 400 1.9rem/1 var(--titre); color: var(--texte); }
+.cu-heure { margin-right: auto; color: var(--doux); }
+.cu-heure b { color: var(--jaune); font: 700 1.25rem/1 var(--etroite); }
+.cu-client { margin: 0; color: var(--doux); }
+.cu-client a { color: var(--texte); }
+.cu-lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cu-lignes li { display: grid; gap: 2px; }
+.cu-lignes b { font-size: 1.08rem; }
+.cu-lignes span { color: var(--jaune); font-size: .95rem; }
+.cu-note { margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(255, 190, 40, .1); color: #ffe2a0; font-weight: 600; }
+.cu-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cu-total { margin-left: auto; font: 700 1rem/1 var(--etroite); color: var(--doux); }
+.cu-remises .cu-cmd { opacity: .6; }
+.cu-iframe { position: fixed; width: 0; height: 0; border: 0; visibility: hidden; }
+
+/* --- panneaux (epuises, reglages) --- */
+.cu-voile { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .7); }
+.cu-panneau { position: fixed; z-index: 21; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(640px, 100% - 24px); max-height: 86svh; overflow: auto; padding: 20px; border-radius: 20px; background: #171513; border: 1px solid rgba(255, 160, 60, .3); display: grid; gap: 14px; }
+.cu-panneau h2 { margin: 0; font: 400 1.5rem/1 var(--titre); text-transform: uppercase; }
+.cu-panneau p { margin: 0; color: var(--doux); }
+.cu-plats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.cu-plat { min-height: 48px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--ligne); background: transparent; color: var(--texte); font: 600 .9rem/1.2 var(--texte-police); text-align: left; cursor: pointer; }
+.cu-plat.cu-ep { border-color: #ff5a4e; background: rgba(255, 90, 78, .14); color: #ffb4ac; text-decoration: line-through; }
+.cu-choix { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cu-choix select { padding: 10px 12px; border-radius: 10px; background: #0b0b0c; color: var(--texte); border: 1px solid var(--ligne-forte); }
+.cu-choix input { width: 24px; height: 24px; accent-color: var(--orange); }
+
+/* --- la page gerant --- */
+.ge-periode { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ge-periode input { min-height: 44px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--ligne-forte); background: #141210; color: var(--texte); color-scheme: dark; }
+.ge { padding: 16px; display: grid; gap: 22px; max-width: 1280px; margin: 0 auto; }
+.ge h2 { margin: 0 0 10px; display: flex; align-items: center; gap: 12px; font: 400 1.4rem/1 var(--titre); text-transform: uppercase; color: var(--jaune); }
+.ge h2 select { font: 600 .9rem/1 var(--texte-police); padding: 8px 10px; border-radius: 10px; background: #141210; color: var(--texte); border: 1px solid var(--ligne-forte); text-transform: none; }
+.ge-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.ge-kpi div { padding: 16px; border-radius: 16px; background: #171513; border: 1px solid var(--ligne); display: grid; gap: 6px; }
+.ge-kpi small { color: var(--doux); font-size: .85rem; }
+.ge-kpi b { font: 700 1.6rem/1 var(--etroite); font-variant-numeric: tabular-nums; }
+.ge-table-zone { overflow-x: auto; border-radius: 14px; border: 1px solid var(--ligne); }
+.ge-table { width: 100%; border-collapse: collapse; font-size: .92rem; font-variant-numeric: tabular-nums; }
+.ge-table th, .ge-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--ligne); vertical-align: top; }
+.ge-table th { font: 700 .76rem/1 var(--etroite); letter-spacing: .1em; text-transform: uppercase; color: var(--doux); background: #141210; }
+.ge-table small { color: var(--doux); }
+.ge-offre { display: flex; flex-wrap: wrap; gap: 8px; }
+.ge-offre input, .ge-offre select { min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--ligne-forte); background: #141210; color: var(--texte); color-scheme: dark; flex: 1 1 180px; }
+.ge-ferm { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--doux); }
+
+@media (max-width: 900px) { .cu-colonnes { grid-template-columns: 1fr; } }
+
+/* --- Que faire si... (aide de la tablette) --- */
+.cu-aide { border-color: rgba(255, 190, 40, .5); color: var(--jaune); }
+.cu-aide-liste { display: grid; gap: 8px; }
+.cu-aide-item { border-radius: 12px; border: 1px solid var(--ligne); background: #120f0d; }
+.cu-aide-item summary { cursor: pointer; padding: 14px 16px; font: 700 1.05rem/1.2 var(--texte-police); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.cu-aide-item summary::-webkit-details-marker { display: none; }
+.cu-aide-item summary::after { content: '+'; color: var(--orange); font-size: 1.3rem; line-height: 1; }
+.cu-aide-item[open] summary::after { content: '–'; }
+.cu-aide-item p { margin: 0; padding: 0 16px 14px; color: var(--texte) !important; line-height: 1.5; }
+.cu-aide-item b { color: var(--jaune); }
+.cu-aide-pied { font-size: .9rem; }
+.cu-choix input[data-ip] { width: 190px; height: auto; padding: 10px 12px; border-radius: 10px; background: #0b0b0c; color: var(--texte); border: 1px solid var(--ligne-forte); font: 600 1rem/1 var(--texte-police); }
+/* --- Recherche de l'imprimante --- */
+.cu-attente { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 140, 30, .25); border-top-color: var(--orange); animation: cu-tourne .8s linear infinite; }
+@keyframes cu-tourne { to { transform: rotate(360deg); } }
+.cu-numero { display: grid; justify-items: center; gap: 4px; padding: 14px 8px; }
+.cu-numero b { font: 400 2.6rem/1 var(--titre); color: var(--jaune); }
+.cu-numero small { color: var(--doux); font-size: .78rem; }
+/* --- Installer l'appli (mini-tuto) --- */
+.cu-h3 { margin: 4px 0 0; font: 700 .82rem/1 var(--etroite); letter-spacing: .12em; text-transform: uppercase; color: var(--orange); }
+.cu-tuto { margin: 0; padding-left: 22px; display: grid; gap: 8px; color: var(--texte); line-height: 1.45; }
+.cu-tuto b { color: var(--jaune); }
+.cu-note { padding: 10px 12px; border-radius: 12px; background: rgba(255, 190, 40, .1); color: #ffe2a0 !important; }
+.cu-lien { display: inline-flex; align-items: center; text-decoration: none; }
+/* --- Mise a jour de l'appli --- */
+.cu-maj { margin: 12px 16px 0; padding: 10px 14px; border-radius: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; background: rgba(255, 122, 0, .1); border: 1px solid rgba(255, 140, 30, .5); font-weight: 600; }
+.cu-maj[hidden] { display: none; }
+.cu-maj span { margin-right: auto; }
+.cu-role { display: grid; gap: 6px; padding: 16px; text-align: left; }
+.cu-role b { font-size: 1.05rem; color: var(--jaune); }
+.cu-role small { color: var(--doux); line-height: 1.4; }
+.cu-roles { grid-template-columns: 1fr 1fr; }
+@media (max-width: 560px) { .cu-roles { grid-template-columns: 1fr; } }
+/* --- Alerte des comptes Stripe (page gerant) --- */
+.ge-alerte { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .75); }
+.ge-alerte-boite { width: min(520px, 100%); padding: 22px; border-radius: 20px; background: #1b1311; border: 2px solid #ff5a4e; display: grid; gap: 12px; }
+.ge-alerte-boite h2 { margin: 0; font: 400 1.5rem/1.1 var(--titre); text-transform: uppercase; color: #ffb4ac; }
+.ge-alerte-boite ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.ge-alerte-boite p { margin: 0; color: var(--doux); }
+
+/* Un element cache reste cache, meme s'il a un display (le panneau « Fermer »). */
+.cuisine [hidden], .gerant [hidden], .cuisine-code [hidden] { display: none !important; }
+
+/* --- cuisine : menu de gauche en petites cartes --- */
+body.cuisine #app, body.gerant #app { display: grid; grid-template-columns: 248px 1fr; min-height: 100svh; }
+.cu-menu { position: sticky; top: 0; height: 100svh; overflow-y: auto; padding: 16px 12px; background: #100f0e; border-right: 1px solid rgba(255, 160, 60, .16); display: grid; align-content: start; gap: 18px; }
+.cu-marque { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; padding: 0 4px; }
+.cu-logo .logo { width: 56px; height: 56px; }
+.cu-marque small { font: 700 .72rem/1 var(--etroite); letter-spacing: .14em; text-transform: uppercase; color: var(--orange); }
+.cu-marque h1 { margin: 3px 0 6px; font: 400 1.25rem/1.05 var(--titre); text-transform: uppercase; overflow-wrap: anywhere; }
+.cu-marque .cu-etat { padding: 4px 9px; font-size: .7rem; }
+.cu-cartes { display: grid; gap: 8px; }
+.cu-carte { display: grid; grid-template-columns: 38px 1fr; gap: 10px; align-items: center; width: 100%; min-height: 60px; padding: 9px 12px 9px 9px; border-radius: 14px; border: 1px solid var(--ligne); background: #1a1714; color: var(--texte); text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.cu-carte:hover { border-color: rgba(255, 140, 30, .55); }
+.cu-carte:focus-visible { outline: 2px solid var(--jaune); outline-offset: 2px; }
+.cu-ico { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 122, 0, .12); color: var(--orange); }
+.cu-ico svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cu-carte-txt { display: grid; gap: 3px; min-width: 0; }
+.cu-carte-txt b { font: 700 .98rem/1.1 var(--texte-police); }
+.cu-carte-txt small { font-size: .8rem; line-height: 1.2; color: var(--doux); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cu-carte-on { border-color: var(--orange); background: linear-gradient(135deg, rgba(255, 122, 0, .2), rgba(255, 122, 0, .05)); }
+.cu-carte-on .cu-ico { background: var(--feu); color: #1b0d00; }
+.cu-carte-alerte { border-color: rgba(255, 190, 40, .7); background: rgba(255, 190, 40, .12); }
+.cu-carte-alerte .cu-ico { background: #ffbe28; color: #1b0d00; }
+.cu-carte-alerte small { color: #ffd36a; }
+.cu-carte[data-carte="maj"] { border-color: var(--orange); }
+.cu-zone { min-width: 0; }
+body.cuisine .cu-colonnes { grid-template-columns: 1.25fr 1fr; }
+.cu-remises { padding: 16px; }
+.cu-remises h2 { margin: 0 0 10px; font: 400 1.3rem/1 var(--titre); text-transform: uppercase; color: var(--jaune); }
+.cu-remises h2 span { color: var(--doux); font-size: .9em; }
+.cu-remises > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+.cu-remises .cu-cmd { opacity: .8; }
+
+/* Tablette en portrait, telephone : le menu passe en bandeau qui defile. */
+@media (max-width: 900px) {
+  body.cuisine #app, body.gerant #app { grid-template-columns: 1fr; align-content: start; }
+  .cu-menu { position: sticky; z-index: 5; height: auto; padding: 10px 12px; gap: 10px; border-right: 0; border-bottom: 1px solid rgba(255, 160, 60, .16); }
+  .cu-marque { grid-template-columns: 40px 1fr; }
+  .cu-logo .logo { width: 40px; height: 40px; }
+  .cu-marque h1 { margin: 2px 0 4px; font-size: 1.1rem; }
+  .cu-cartes { display: flex; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .cu-carte { flex: 0 0 auto; width: 186px; min-height: 54px; }
+  body.cuisine .cu-colonnes { grid-template-columns: 1fr; }
+}
+
+/* --- gerant : un ecran a la fois, a droite du menu --- */
+body.gerant .ge { max-width: 1180px; margin: 0; width: 100%; min-width: 0; gap: 16px; align-content: start; }
+.ge-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid rgba(255, 160, 60, .16); }
+.ge h2.ge-titre { margin: 0; font-size: 1.9rem; color: var(--texte); }
+.ge section { display: grid; gap: 12px; align-content: start; }
+.ge h3 { margin: 8px 0 0; font: 400 1.15rem/1 var(--titre); text-transform: uppercase; color: var(--jaune); }
+.ge-aide { margin: 0; color: var(--doux); max-width: 70ch; }
+.ge-aide b { color: var(--texte); }
+.ge-outils select { min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--ligne-forte); background: #141210; color: var(--texte); font: 600 .95rem/1 var(--texte-police); }
+body.gerant .ge-kpi { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); }
+.cu-bleu { background: rgba(90, 160, 255, .15); color: #a9ccff; }
+.ge-test { margin: 0; padding: 10px 14px; border-radius: 12px; background: rgba(90, 160, 255, .1); border: 1px solid rgba(90, 160, 255, .35); color: #cfe0ff; max-width: 70ch; }
+
+/* --- gerant : formulaire de l'offre du moment --- */
+.ge-offre-form { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.ge-champs { display: grid; gap: 14px; }
+.ge-champ { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.ge-champ > span, .ge-champ legend { font: 700 .76rem/1 var(--etroite); letter-spacing: .1em; text-transform: uppercase; color: var(--doux); padding: 0; margin-bottom: 6px; }
+.ge-champ input, .ge-champ select, .ge-champ textarea, .ge-ligne input, .ge-ligne select { min-height: 44px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--ligne-forte); background: #141210; color: var(--texte); font: 500 1rem/1.3 var(--texte-police); color-scheme: dark; }
+.ge-champ textarea { resize: vertical; }
+.ge-photo input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.ge-photo b { display: inline-flex; align-items: center; justify-self: start; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px dashed var(--orange); color: var(--orange); cursor: pointer; }
+.ge-photo:focus-within b { outline: 2px solid var(--jaune); outline-offset: 2px; }
+.ge-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 8px; }
+.ge-ligne > span { color: var(--doux); }
+.ge-ligne input { flex: 1 1 200px; }
+.ge-puces { display: flex; flex-wrap: wrap; gap: 6px; }
+.ge-puce input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ge-puce span { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--ligne-forte); color: var(--doux); font-weight: 600; cursor: pointer; user-select: none; }
+.ge-puce input:checked + span { background: rgba(255, 122, 0, .16); border-color: var(--orange); color: var(--texte); }
+.ge-puce input:focus-visible + span { outline: 2px solid var(--jaune); outline-offset: 2px; }
+.ge-apercu { position: sticky; top: 16px; display: grid; gap: 8px; }
+.ge-apercu small { font: 700 .76rem/1 var(--etroite); letter-spacing: .1em; text-transform: uppercase; color: var(--doux); }
+.ge-apercu .plats { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; grid-template-columns: 1fr; }
+.ge-apercu-info { color: var(--doux); font-size: .85rem; }
+.ge-modale .ge-alerte-boite { border-color: rgba(255, 160, 60, .4); background: #171513; }
+.ge-modale .ge-alerte-boite h2 { color: var(--texte); }
+@media (max-width: 900px) { .ge-offre-form { grid-template-columns: 1fr; } .ge-apercu { position: static; } }
+.cu-a-payer { background: #ffbe28; color: #1b0d00; font-size: .85rem; }
+.ns-ventes .ge-kpi { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }

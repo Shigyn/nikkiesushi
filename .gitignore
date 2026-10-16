@@ -2,3 +2,4 @@ node_modules/
 .DS_Store
 # Notes internes LocWeb (tarifs, commission) : jamais sur le depot public.
 PLAN.md
+CODE-ESPACE-PRO.md
