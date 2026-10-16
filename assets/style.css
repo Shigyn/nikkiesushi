@@ -462,12 +462,6 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 .confirme p { margin: 0; color: var(--doux); max-width: 34ch; }
 .confirme .confirme-total { color: var(--texte); font-weight: 600; }
 
-/* Des fleurs de cerisier dans la bande vide a gauche de la carte (Nicolas, 17/10 :
-   « plus de fleurs, pas la ou il y a les textes »). Une categorie sur deux, en
-   alternant trois brins decoupes de deco-sakura.png. La taille suit la marge :
-   sur un ecran trop etroit pour avoir une marge, il n'y a pas de fleur du tout. */
-.page-carte .categorie { position: relative; --m: clamp(0px, calc((100vw - 1250px) / 2), 250px); }
-.page-carte .categorie:nth-of-type(odd)::before { content: ''; position: absolute; pointer-events: none; width: var(--m); left: calc(-1 * var(--m) - 24px); background: left center / contain no-repeat; opacity: .55; }
-.page-carte .categorie:nth-of-type(6n+1)::before { background-image: url(../photos/deco-brin-3.png); aspect-ratio: 325 / 142; top: 10px; transform: rotate(-8deg); }
-.page-carte .categorie:nth-of-type(6n+3)::before { background-image: url(../photos/deco-brin-2.png); aspect-ratio: 255 / 260; top: 20%; width: calc(var(--m) * .8); left: calc(-.8 * var(--m) - 30px); transform: scaleX(-1) rotate(-6deg); }
-.page-carte .categorie:nth-of-type(6n+5)::before { background-image: url(../photos/deco-brin-1.png); aspect-ratio: 213 / 154; top: 35%; transform: rotate(10deg); }
+/* Le fond de la carte : une de leurs photos sur ardoise, a 15 % (Nicolas, 17/10).
+   Fixe derriere la page, elle ne gene jamais la lecture des plats. */
+body.page-carte::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: url(../photos/nikkie-truffe-ardoise-1600.webp) center / cover no-repeat; opacity: .15; }
