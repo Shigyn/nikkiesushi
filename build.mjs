@@ -11,12 +11,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ENTREPRISE as E, HORAIRES, HORAIRES_TEXTE, HORAIRES_SCHEMA, COMMANDE, AVIS, FAQ, FAQ_LIVRAISON } from './_source/contenu.mjs';
 import { CARTE, VEDETTES } from './_source/carte.mjs';
+import { PHOTOS_DECO } from './_source/photos-deco.mjs';
 
 const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)/, '$1');
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '11';
+const V = '12';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
 const STRIPE_PK = process.env.STRIPE_PK || '';
 if (STRIPE_PK) { COMMANDE.paiement = 'stripe'; COMMANDE.stripePk = STRIPE_PK; }
@@ -247,8 +248,9 @@ const PICTO = {
   verre: 'M6 3h12l-1.6 16.2A2 2 0 0 1 14.4 21H9.6a2 2 0 0 1-2-1.8zm2.2 2 .5 5h6.6l.5-5z',
 };
 const PICTO_CAT = { plateaux: 'bento', box: 'bento', midi: 'bento', 'nikkei-rolls': 'roll', 'maki-rolls': 'roll', 'sushi-tacos': 'nigiri', ceviche: 'bol', poke: 'bol', 'donburi-nouilles': 'bol', entrees: 'bol', sashimi: 'poisson', 'tataki-chirashi': 'poisson', desserts: 'mochi', boissons: 'verre' };
-const vignette = (r, i) => i.photo
-  ? `<div class="plat-vignette">${img(r, i.photo, i.n, { sizes: '(max-width: 760px) 92px, 112px' })}</div>`
+// La photo du restaurant si elle existe, sinon une photo de decor (Unsplash, a remplacer).
+const vignette = (r, i) => (i.photo || PHOTOS_DECO[i.id])
+  ? `<div class="plat-vignette">${img(r, i.photo || PHOTOS_DECO[i.id], i.n, { sizes: '(max-width: 760px) 92px, 112px' })}</div>`
   : `<div class="plat-vignette vide" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${PICTO[PICTO_CAT[i.cat] || 'bento']}"/></svg></div>`;
 
 const ligneCarte = (r, i) => `
