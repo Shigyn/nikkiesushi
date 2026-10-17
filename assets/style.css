@@ -469,3 +469,19 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 .page-carte .tete-page::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: min(56%, 900px); z-index: 0; pointer-events: none;
   background: url(../photos/tete-carte.webp?v=2) right center / cover no-repeat; opacity: .75; }
 @media (max-width: 760px) { .page-carte .tete-page::after { width: 100%; opacity: .2; } }
+
+/* Le kanji de chaque categorie, en contour or, face au titre (17/10). Decor :
+   jamais lu par un lecteur d'ecran (attribut, pas du texte). */
+.page-carte .categorie-tete { position: relative; z-index: 0; }
+.page-carte .categorie-tete[data-kanji]::after { content: attr(data-kanji); position: absolute; right: 0; bottom: -2px; z-index: -1; pointer-events: none;
+  font: 700 clamp(3.2rem, 2rem + 4.4vw, 6rem)/1 var(--serif); letter-spacing: .04em; color: transparent;
+  -webkit-text-stroke: 1px rgba(214, 178, 100, .38); text-stroke: 1px rgba(214, 178, 100, .38); }
+/* Sur telephone, le titre et son texte prennent toute la largeur : pas de kanji (il passerait sur le texte). */
+@media (max-width: 760px) { .page-carte .categorie-tete[data-kanji]::after { display: none; } }
+
+/* Chaque plat dans une petite carte sombre a filet or (17/10 : la carte faisait vide). */
+.page-carte .plats { gap: 14px; column-gap: 16px; padding-top: 18px; }
+.page-carte .plat { padding: 14px 16px 14px 14px; border: 1px solid var(--ligne); border-radius: 18px; background: linear-gradient(160deg, rgba(36, 31, 26, .78), rgba(21, 18, 15, .62)); box-shadow: 0 12px 30px -18px rgba(0, 0, 0, .8); transition: border-color .25s, transform .25s; }
+.page-carte .plat:hover { border-color: var(--ligne-forte); }
+.page-carte .categorie-tete[data-kanji]::after { font-size: clamp(3.6rem, 2.2rem + 5vw, 6.8rem); bottom: -10px; }
+@media (max-width: 760px) { .page-carte .plats { gap: 10px; } .page-carte .plat { padding: 12px; border-radius: 16px; } }

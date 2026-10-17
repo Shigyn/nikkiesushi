@@ -16,7 +16,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '10';
+const V = '11';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
 const STRIPE_PK = process.env.STRIPE_PK || '';
 if (STRIPE_PK) { COMMANDE.paiement = 'stripe'; COMMANDE.stripePk = STRIPE_PK; }
@@ -25,6 +25,8 @@ if (PROD && COMMANDE.paiement === 'apercu') throw new Error('Mise en ligne : pas
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const abs = (ch) => URL_SITE + ch;
 const prix = (p) => (Number.isInteger(p) ? `${p}` : p.toFixed(2).replace('.', ',')) + '&nbsp;€';
+// Le nom de chaque categorie en japonais, en grand contour or face au titre (Nicolas, 17/10 : « la carte fait vide »).
+const KANJI = { plateaux: '盛合せ', box: '箱', midi: '昼', 'nikkei-rolls': '巻', 'sushi-tacos': '寿司', ceviche: '魚', poke: '丼', sashimi: '刺身', 'tataki-chirashi': '炙り', 'donburi-nouilles': '麺', 'maki-rolls': '巻物', entrees: '前菜', desserts: '甘味', boissons: '飲物' };
 const TOUS = CARTE.flatMap((c) => c.items.map((i) => ({ ...i, cat: c.id })));
 const plat = (id) => { const x = TOUS.find((i) => i.id === id); if (!x) throw new Error('plat inconnu : ' + id); return x; };
 
@@ -426,7 +428,7 @@ ajouter('carte/', {
 <div class="cadre carte">
   ${CARTE.map((c) => `
   <section class="categorie" id="${c.id}" aria-labelledby="t-${c.id}">
-    <div class="categorie-tete"><h2 id="t-${c.id}">${esc(c.nom)}</h2>${c.intro ? `<p>${esc(c.intro)}</p>` : ''}</div>
+    <div class="categorie-tete"${KANJI[c.id] ? ` data-kanji="${KANJI[c.id]}"` : ''}><h2 id="t-${c.id}">${esc(c.nom)}</h2>${c.intro ? `<p>${esc(c.intro)}</p>` : ''}</div>
     <ul class="plats">${c.items.map((i) => ligneCarte(r, { ...i, cat: c.id })).join('')}
     </ul>
   </section>`).join('')}
