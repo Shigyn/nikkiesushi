@@ -218,7 +218,7 @@
     majEtat();
   }
   function carte(c) {
-    var rb = c.paiement === 'sur_place' ? '<span class="cu-badge cu-a-payer">À payer · ' + euros(c.total_cents) + '</span>' : c.paiement === 'remboursee' ? '<span class="cu-badge cu-rouge">Remboursée</span>' : c.paiement === 'remboursee_partiel' ? '<span class="cu-badge cu-jaune">Remb. ' + euros(c.rembourse_cents) + '</span>' : '<span class="cu-badge cu-vert">Payée</span>';
+    var rb = c.paiement === 'sur_place' ? '<span class="cu-badge cu-a-payer">Espèces · ' + euros(c.total_cents) + '</span>' : c.paiement === 'remboursee' ? '<span class="cu-badge cu-rouge">Remboursée</span>' : c.paiement === 'remboursee_partiel' ? '<span class="cu-badge cu-jaune">Remb. ' + euros(c.rembourse_cents) + '</span>' : '<span class="cu-badge cu-vert">Payée</span>';
     return '<article class="cu-cmd' + (c.imprimee_le ? '' : ' cu-non-imp') + '" data-id="' + c.id + '">' +
       '<div class="cu-cmd-tete"><b class="cu-num">N° ' + c.numero + '</b><span class="cu-heure">' + (c.creneau ? 'Programmée · ' : '') + (c.mode === 'livraison' ? 'À livrer à <b>' : 'À remettre à <b>') + hm(c.heure_prevue) + '</b></span>' + rb + '</div>' +
       '<p class="cu-client">' + esc(c.nom) + ' · <a href="tel:' + esc(c.telephone) + '">' + esc(c.telephone) + '</a></p>' +
@@ -275,7 +275,7 @@
     });
     t += '-'.repeat(L) + '\n';
     if (c.note) t += ESC + 'E1' + 'NOTE : ' + ESC + 'E0' + couper(c.note, L - 7).join('\n') + '\n';
-    t += sans(c.nom) + ' - ' + sans(c.telephone) + '\n' + (c.paiement === 'sur_place' ? ESC + 'a1' + GS + '!' + '\x11' + 'A PAYER : ' + sans(euros(c.total_cents)) + '\n' + GS + '!' + '\x00' + ESC + 'a0' : 'PAYE EN LIGNE : ' + sans(euros(c.total_cents))) + '\n\n\n\n' + GS + 'V' + '\x42' + '\x00';
+    t += sans(c.nom) + ' - ' + sans(c.telephone) + '\n' + (c.paiement === 'sur_place' ? ESC + 'a1' + GS + '!' + '\x11' + 'ESPECES : ' + sans(euros(c.total_cents)) + '\n' + GS + '!' + '\x00' + ESC + 'a0' : 'PAYE EN LIGNE : ' + sans(euros(c.total_cents))) + '\n\n\n\n' + GS + 'V' + '\x42' + '\x00';
     return t;
   }
   // L'appli Android LocWeb envoie les octets ESC/POS a l'imprimante, port 9100, sans fenetre.
@@ -595,7 +595,8 @@
     var liv = l.filter(function (c) { return c.mode === 'livraison'; }).length;
     $('[data-mode-test]').hidden = !ventes.test;
     $('[data-kpi]').innerHTML = [['Chiffre d’affaires', euros(ca)], ['Commandes', l.length], ['Panier moyen', l.length ? euros(Math.round(ca / l.length)) : '—'],
-      ['Livraisons', liv + ' / ' + l.length], ['Remboursé', euros(l.reduce(function (t, c) { return t + c.rembourse_cents; }, 0))]]
+      ['Livraisons', liv + ' / ' + l.length],
+      ['En espèces', euros(l.filter(function (c) { return c.paiement === 'sur_place'; }).reduce(function (t, c) { return t + c.total_cents; }, 0))], ['Remboursé', euros(l.reduce(function (t, c) { return t + c.rembourse_cents; }, 0))]]
       .map(function (k) { return '<div><small>' + k[0] + '</small><b>' + k[1] + '</b></div>'; }).join('');
     $('[data-cmds]').innerHTML = '<thead><tr><th>Jour</th><th>N°</th><th>Client</th><th>Mode</th><th>Contenu</th><th>Payé</th><th>État</th><th></th></tr></thead><tbody>' +
       (tout.map(function (c) {
@@ -603,7 +604,7 @@
         return '<tr><td>' + c.jour.slice(8, 10) + '/' + c.jour.slice(5, 7) + ' ' + hm(c.payee_le || c.cree_le) + '</td><td>' + c.numero + '</td><td>' + esc(c.nom) + '<br><small>' + esc(c.telephone) + '</small></td>' +
           '<td>' + (c.mode === 'livraison' ? 'Livraison' : 'À emporter') + '</td>' +
           '<td><small>' + c.lignes.map(function (x) { return x.qte + ' × ' + esc(x.n) + (x.resume ? ' (' + esc(x.resume) + ')' : ''); }).join(', ') + '</small></td>' +
-          '<td>' + euros(c.total_cents) + (c.rembourse_cents ? '<br><small>remb. ' + euros(c.rembourse_cents) + '</small>' : '') + '</td><td>' + esc(etatDe(c)) + '</td>' +
+          '<td>' + euros(c.total_cents) + (c.paiement === 'sur_place' ? '<br><small>espèces</small>' : '') + (c.rembourse_cents ? '<br><small>remb. ' + euros(c.rembourse_cents) + '</small>' : '') + '</td><td>' + esc(etatDe(c)) + '</td>' +
           '<td>' + (reste > 0 && c.paiement !== 'sur_place' ? '<button type="button" class="cu-bouton cu-discret" data-rembourser="' + c.id + '" data-reste="' + reste + '">Rembourser</button>' : '') + '</td></tr>';
       }).join('') || '<tr><td colspan="8">Aucune commande sur cette période.</td></tr>') + '</tbody>';
     if (periode && periode.nom === 'jour') sousCarte('ventes', euros(ca) + ' aujourd’hui');
@@ -612,7 +613,8 @@
   var COLONNES = [
     ['Jour', function (c) { return c.jour; }], ['Heure', function (c) { return hm(c.payee_le || c.cree_le); }], ['N°', function (c) { return c.numero; }],
     ['Client', function (c) { return c.nom; }], ['Téléphone', function (c) { return c.telephone; }],
-    ['Mode', function (c) { return c.mode === 'livraison' ? 'Livraison' : 'À emporter'; }], ['Adresse', function (c) { return c.adresse || ''; }],
+    ['Mode', function (c) { return c.mode === 'livraison' ? 'Livraison' : 'À emporter'; }],
+    ['Paiement', function (c) { return c.paiement === 'sur_place' ? 'Espèces' : 'En ligne'; }], ['Adresse', function (c) { return c.adresse || ''; }],
     ['Contenu', function (c) { return c.lignes.map(function (x) { return x.qte + ' x ' + x.n + (x.resume ? ' (' + x.resume + ')' : ''); }).join(' | '); }],
     ['Total TTC', function (c) { return (c.total_cents / 100).toFixed(2).replace('.', ','); }], ['Remboursé', function (c) { return (c.rembourse_cents / 100).toFixed(2).replace('.', ','); }],
     ['Net', function (c) { return ((c.total_cents - c.rembourse_cents) / 100).toFixed(2).replace('.', ','); }], ['État', etatDe]

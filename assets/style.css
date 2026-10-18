@@ -453,6 +453,19 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 }
 
 /* Le paiement integre (Stripe) et la confirmation */
+/* Le choix du reglement : en ligne ou en especes (18/10) */
+.reglements { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.reglement { display: grid; gap: 3px; text-align: left; padding: 13px 14px; border-radius: var(--r); border: 1px solid var(--ligne-forte); background: var(--encre); color: var(--texte); font: inherit; cursor: pointer; transition: border-color .2s, background .2s; }
+.reglement b { font-weight: 700; font-size: .98rem; }
+.reglement small { color: var(--pale); font-size: .8rem; line-height: 1.35; }
+.reglement:hover { border-color: var(--or-fonce); }
+.reglement.actif { border-color: var(--or); background: rgba(214, 178, 100, .1); box-shadow: inset 0 0 0 1px var(--or); }
+.reglement.actif b { color: var(--or-clair); }
+.reglement:focus-visible { outline: 2px solid var(--or-clair); outline-offset: 2px; }
+.especes-note { margin-top: 14px; padding: 14px 16px; border-radius: var(--r); background: var(--encre); border: 1px solid var(--ligne); }
+.especes-note b { display: block; color: var(--or-clair); font-size: 1rem; margin-bottom: 4px; }
+.especes-note p { margin: 0; color: var(--doux); font-size: .9rem; line-height: 1.5; }
+@media (max-width: 380px) { .reglements { grid-template-columns: 1fr; } }
 .paiement-stripe { margin-top: 14px; padding: 14px; border-radius: var(--r); background: var(--encre); border: 1px solid var(--ligne); min-height: 120px; }
 .ps-attente { margin: 0; color: var(--doux); font-size: .92rem; }
 .confirme { display: grid; justify-items: center; gap: 8px; padding: 26px 8px 8px; text-align: center; }

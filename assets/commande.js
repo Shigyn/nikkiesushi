@@ -262,6 +262,15 @@
       '<div class="recap"><small>' + nbArticles() + ' article' + (nbArticles() > 1 ? 's' : '') + '</small><div class="recap-lignes">' +
       etat.panier.map(function (l) { var p = CARTE[l.id]; return '<div><span>' + l.qte + ' × ' + esc(p.n) + (l.choix ? ' (' + esc(l.choix) + ')' : '') + '</span><span>' + euros(p.p * l.qte) + '</span></div>'; }).join('') + '</div></div>';
     if (CFG.paiement === 'stripe') {
+      var especes = i.reglement === 'especes';
+      corps.insertAdjacentHTML('beforeend', '<div class="reglements" role="radiogroup" aria-label="Paiement">' +
+        '<button type="button" class="reglement' + (especes ? '' : ' actif') + '" data-reglement="ligne" role="radio" aria-checked="' + !especes + '"><b>Payer en ligne</b><small>Carte, Apple Pay, Google Pay</small></button>' +
+        '<button type="button" class="reglement' + (especes ? ' actif' : '') + '" data-reglement="especes" role="radio" aria-checked="' + especes + '"><b>Payer en espèces</b><small>' + (i.mode === 'livraison' ? 'À la livraison' : 'Au comptoir, en récupérant la commande') + '</small></button></div>');
+      if (especes) {
+        corps.insertAdjacentHTML('beforeend', '<div class="especes-note"><b>Vous réglez ' + euros(total) + ' en espèces</b><p>' + (i.mode === 'livraison' ? 'Au livreur, à la livraison. Pensez à prévoir l’appoint si possible.' : 'Au comptoir, quand vous récupérez votre commande.') + ' La commande part en cuisine dès que vous la validez.</p></div><p class="alerte" data-alerte-paiement hidden></p>');
+        pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-especes>' + ICO.sac + ' Valider ma commande</button>';
+        return;
+      }
       corps.insertAdjacentHTML('beforeend', '<div class="paiement-stripe" data-ps><p class="ps-attente">Préparation du paiement sécurisé…</p></div><p class="alerte" data-alerte-paiement hidden></p>');
       pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-payer disabled>' + ICO.cadenas + ' Payer ' + euros(total) + '</button>' +
         '<p class="securite">' + ICO.cadenas + ' Paiement sécurisé par Stripe · CB, Visa, Mastercard, Apple Pay, Google Pay</p>';
@@ -367,15 +376,21 @@
         else { b.disabled = false; b.innerHTML = libelle; alertePaiement('Le paiement n’est pas terminé. Réessayez.'); }
       });
   }
-  // La commande est payee : elle part en cuisine (ns-stripe-webhook) ; le client voit le recapitulatif.
-  function confirmation(c) {
+  function validerEspeces(b) {
+    b.disabled = true; b.textContent = 'Envoi au restaurant…'; alertePaiement('');
+    appelNs(Object.assign(demande(), { mode_paiement: 'especes' }))
+      .then(function (rep) { PAIEMENT = null; confirmation(rep.commande, true); })
+      .catch(function (e) { b.disabled = false; b.innerHTML = ICO.sac + ' Valider ma commande'; alertePaiement(e.message); });
+  }
+  // La commande est payee (ou a regler en especes) : elle part en cuisine ; le client voit le recapitulatif.
+  function confirmation(c, especes) {
     var h = new Date(c.heure_prevue), hmn = h.getHours() + 'h' + String(h.getMinutes()).padStart(2, '0');
     etat.panier = []; garder(); majBarre();
-    ecran = 'fini'; titre.textContent = 'Commande payée'; retour.hidden = true; bandeau.hidden = true;
+    ecran = 'fini'; titre.textContent = especes ? 'Commande envoyée' : 'Commande payée'; retour.hidden = true; bandeau.hidden = true;
     corps.innerHTML = '<div class="confirme"><div class="confirme-ok" aria-hidden="true">✓</div><p class="confirme-num">Commande n° ' + c.numero + '</p>' +
       '<h3>' + (c.mode === 'livraison' ? 'Livrée vers ' : 'Prête à ') + hmn + '</h3>' +
-      '<p>' + (c.mode === 'livraison' ? 'Le livreur vous appelle en arrivant. Rien à régler à la porte : c’est déjà payé.' : 'À récupérer au 1 bis rue Porte Olivier, place de la Madeleine. Donnez votre numéro au comptoir.') + '</p>' +
-      '<p class="confirme-total">Payé : ' + euros(c.total_cents / 100) + '</p></div>';
+      '<p>' + (c.mode === 'livraison' ? 'Le livreur vous appelle en arrivant.' + (especes ? '' : ' Rien à régler à la porte : c’est déjà payé.') : 'À récupérer au 1 bis rue Porte Olivier, place de la Madeleine. Donnez votre numéro au comptoir.') + '</p>' +
+      '<p class="confirme-total">' + (especes ? 'À régler en espèces : ' : 'Payé : ') + euros(c.total_cents / 100) + '</p></div>';
     pied.innerHTML = '<button type="button" class="bouton bouton-ligne" data-fermer-panier>Fermer</button>';
   }
   // Retour d'une banque (3D Secure avec redirection).
@@ -414,9 +429,15 @@
       if (ecran === 'panier') { ecran = 'infos'; rendre(); return; }
       if (ecran === 'infos') { lireForm(); if (verifier()) { ecran = 'recap'; rendre(); } return; }
     }
+    var es = e.target.closest('[data-especes]');
+    if (es && !es.disabled) { validerEspeces(es); return; }
     var b = e.target.closest('[data-payer]');
     if (b && !b.disabled) payer(b);
   });
   corps.addEventListener('input', function (e) { if (e.target.closest('[data-form]')) lireForm(); });
+  corps.addEventListener('click', function (e) {
+    var r = e.target.closest('[data-reglement]'); if (!r) return;
+    etat.infos.reglement = r.getAttribute('data-reglement'); garder(); rendre();
+  });
   corps.addEventListener('change', function (e) { if (e.target.name === 'creneau') lireForm(); });
 })();
