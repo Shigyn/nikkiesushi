@@ -265,9 +265,9 @@
       var especes = i.reglement === 'especes';
       corps.insertAdjacentHTML('beforeend', '<div class="reglements" role="radiogroup" aria-label="Paiement">' +
         '<button type="button" class="reglement' + (especes ? '' : ' actif') + '" data-reglement="ligne" role="radio" aria-checked="' + !especes + '"><b>Payer en ligne</b><small>Carte, Apple Pay, Google Pay</small></button>' +
-        '<button type="button" class="reglement' + (especes ? ' actif' : '') + '" data-reglement="especes" role="radio" aria-checked="' + especes + '"><b>Payer en espèces</b><small>' + (i.mode === 'livraison' ? 'À la livraison' : 'Au comptoir, en récupérant la commande') + '</small></button></div>');
+        '<button type="button" class="reglement' + (especes ? ' actif' : '') + '" data-reglement="especes" role="radio" aria-checked="' + especes + '"><b>Payer sur place</b><small>' + (i.mode === 'livraison' ? 'À la livraison' : 'Au comptoir, en récupérant la commande') + '</small></button></div>');
       if (especes) {
-        corps.insertAdjacentHTML('beforeend', '<div class="especes-note"><b>Vous réglez ' + euros(total) + ' en espèces</b><p>' + (i.mode === 'livraison' ? 'Au livreur, à la livraison. Pensez à prévoir l’appoint si possible.' : 'Au comptoir, quand vous récupérez votre commande.') + ' La commande part en cuisine dès que vous la validez.</p></div><p class="alerte" data-alerte-paiement hidden></p>');
+        corps.insertAdjacentHTML('beforeend', '<div class="especes-note"><b>Vous réglez ' + euros(total) + ' sur place</b><p>' + (i.mode === 'livraison' ? 'Au livreur, à la livraison.' : 'Au comptoir, quand vous récupérez votre commande.') + ' La commande part en cuisine dès que vous la validez.</p></div><p class="alerte" data-alerte-paiement hidden></p>');
         pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-especes>' + ICO.sac + ' Valider ma commande</button>';
         return;
       }
@@ -390,7 +390,7 @@
     corps.innerHTML = '<div class="confirme"><div class="confirme-ok" aria-hidden="true">✓</div><p class="confirme-num">Commande n° ' + c.numero + '</p>' +
       '<h3>' + (c.mode === 'livraison' ? 'Livrée vers ' : 'Prête à ') + hmn + '</h3>' +
       '<p>' + (c.mode === 'livraison' ? 'Le livreur vous appelle en arrivant.' + (especes ? '' : ' Rien à régler à la porte : c’est déjà payé.') : 'À récupérer au 1 bis rue Porte Olivier, place de la Madeleine. Donnez votre numéro au comptoir.') + '</p>' +
-      '<p class="confirme-total">' + (especes ? 'À régler en espèces : ' : 'Payé : ') + euros(c.total_cents / 100) + '</p></div>';
+      '<p class="confirme-total">' + (especes ? 'À régler sur place : ' : 'Payé : ') + euros(c.total_cents / 100) + '</p></div>';
     pied.innerHTML = '<button type="button" class="bouton bouton-ligne" data-fermer-panier>Fermer</button>';
   }
   // Retour d'une banque (3D Secure avec redirection).
