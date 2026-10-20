@@ -74,7 +74,6 @@
         '<nav class="cu-cartes" aria-label="Menu de la cuisine">' +
           carteMenu('data-vue="commandes"', 'commandes', 'Commandes') +
           carteMenu('data-vue="remises"', 'remises', 'Remises et livraisons') +
-          carteMenu('data-pause', 'pause', 'Pause') +
           carteMenu('data-epuises', 'epuises', 'Plats épuisés') +
           carteMenu('data-vue="ventes"', 'ventes', 'Ventes') +
           carteMenu('data-fermetures', 'fermetures', 'Fermetures') +
@@ -84,6 +83,7 @@
           carteMenu('data-appliquer hidden', 'maj', 'Mise à jour prête') +
         '</nav></aside>' +
       '<main class="cu-zone">' +
+        '<div class="cu-haut"><button type="button" class="cu-pause" data-pause><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONES.pause + '</svg><span data-pause-txt>Pause</span></button></div>' +
         '<p class="cu-alerte" data-alerte hidden></p>' +
         '<div class="cu-colonnes" data-ecran="commandes">' +
           '<section><h2>À préparer <span data-n-recue></span></h2><div data-col="recue"></div></section>' +
@@ -136,8 +136,12 @@
     sousCarte('commandes', n.recue + ' à préparer · ' + n.prete + ' prête' + (n.prete > 1 ? 's' : ''));
     sousCarte('remises', n.remise ? n.remise + ' aujourd’hui' : 'Aucune pour l’instant');
     var pause = donnees.snack && donnees.snack.pause;
-    var cp = sousCarte('pause', pause ? 'Touche pour reprendre' : 'Commandes ouvertes', pause ? 'En pause' : 'Pause');
-    if (cp) cp.classList.toggle('cu-carte-alerte', !!pause);
+    var bp = $('[data-pause]');
+    if (bp) {
+      bp.classList.toggle('cu-pause-on', !!pause);
+      bp.querySelector('[data-pause-txt]').textContent = pause ? 'En pause · reprendre' : 'Pause';
+      bp.title = pause ? 'Le site ne prend plus de commandes : touche pour reprendre' : 'Arrêter les commandes en ligne quelques minutes';
+    }
     var ep = ((donnees.snack || {}).epuises || []).length;
     sousCarte('epuises', ep ? ep + ' plat' + (ep > 1 ? 's' : '') + ' retiré' + (ep > 1 ? 's' : '') : 'Tout est disponible');
     if (!IMPRESSION) sousCarte('reglages', 'Sonnerie : ' + (reglage.son ? 'activée' : 'coupée'));
@@ -235,7 +239,7 @@
         (c.statut === 'recue' ? '<button type="button" class="cu-bouton cu-feu" data-statut="prete">Prête</button>' : '') +
         (c.statut === 'prete' ? '<button type="button" class="cu-bouton cu-feu" data-statut="remise">' + (c.mode === 'livraison' ? 'Partie en livraison' : 'Remise au client') + '</button><button type="button" class="cu-bouton cu-discret" data-statut="recue">Pas prête</button>' : '') +
         (c.statut === 'remise' ? '<button type="button" class="cu-bouton cu-discret" data-statut="prete">Pas encore remise</button>' : '') +
-        (c.paiement === 'sur_place' && c.statut !== 'remise' ? '<button type="button" class="cu-bouton cu-discret" data-statut="annulee">Pas venu</button>' : '') +
+        (c.statut !== 'remise' ? '<button type="button" class="cu-bouton cu-discret cu-annuler" data-annuler>Annuler</button>' : '') +
         (IMPRESSION ? '<button type="button" class="cu-bouton cu-discret" data-reimprimer>' + (c.imprimee_le ? 'Réimprimer' : 'Imprimer') + '</button>' : '') +
         '<span class="cu-total">' + euros(c.total_cents) + '</span></div></article>';
   }
@@ -438,10 +442,11 @@
   var AIDE = [
     ['Une commande arrive', 'Ça sonne et elle s’affiche dans <b>À préparer</b>. Prépare-la pour l’heure écrite en gros (« À remettre à … »). Quand elle est prête, touche <b>Prête</b>. Quand le client la récupère, vérifie son <b>numéro</b>, puis touche <b>Remise au client</b>.'],
     IMPRESSION && ['Le ticket ne sort pas', 'La commande devient rouge et un bandeau te prévient. Vérifie le <b>papier</b>, que l’imprimante est <b>allumée</b> et que son <b>câble réseau</b> est branché. Puis touche <b>Réimprimer</b> sur la commande. Pour tester : <b>Réglages → Ticket de test</b>. En attendant, prépare la commande en lisant l’écran : tout y est.'],
-    ['Trop de monde, on ne suit plus', 'Touche <b>Pause</b> en haut. Le site n’accepte plus de nouvelles commandes ; celles déjà payées restent à préparer. Quand ça se calme, touche <b>Reprendre les commandes</b>.'],
+    ['Trop de monde, on ne suit plus', 'Touche <b>Pause</b>, en petit en haut à droite. Le site n’accepte plus de nouvelles commandes ; celles déjà payées restent à préparer. Quand ça se calme, touche <b>Reprendre les commandes</b>.'],
     ['Il n’y a plus d’un produit', 'Touche <b>Plats épuisés</b>, puis le plat : il disparaît du site tout de suite. <b>Pense à le remettre</b> quand il revient (même bouton), sinon il reste caché.'],
     ['Un plat déjà payé manque', 'Appelle le client (son numéro est sur la commande) et propose-lui autre chose. S’il préfère être remboursé, préviens le <b>gérant</b> : il rembourse le plat depuis sa page, le client est recrédité sur sa carte.'],
-    ['Le client ne vient pas', 'Appelle-le : son numéro est sur la commande. Si elle est <b>payée en ligne</b>, garde-la et ne la marque <b>Remise</b> que quand il l’a vraiment récupérée. Si elle est <b>à payer sur place</b> et qu’il ne viendra pas, touche <b>Pas venu</b>.'],
+    ['Le client ne vient pas', 'Appelle-le : son numéro est sur la commande. Si elle est <b>payée en ligne</b>, garde-la et ne la marque <b>Remise</b> que quand il l’a vraiment récupérée. Si elle est <b>à payer sur place</b> et qu’il ne viendra pas, touche <b>Annuler</b>.'],
+    ['Une commande est une erreur', 'Touche <b>Annuler</b> sur la commande. Payée en ligne : le client est <b>remboursé en entier</b> sur sa carte, tout seul. À payer sur place : elle disparaît simplement. Une commande déjà remise ne s’annule plus : passe par <b>Ventes → Rembourser</b>.'],
     ['« Hors ligne » en rouge', 'Internet est coupé ou faible. <b>Aucune commande n’est perdue</b> : elles s’afficheront au retour du réseau. Vérifie le Wi-Fi de la tablette. Si ça dure, préviens le gérant.'],
     ['La tablette s’est éteinte', 'Rebranche-la sur son chargeur, rallume-la et ouvre la page <b>Cuisine</b> (l’icône Nikkie Sushi sur l’écran d’accueil). Pas besoin de retaper le code. Les commandes arrivées entre-temps s’affichent toutes seules.'],
     ['Le code est demandé', 'C’est le code à 8 chiffres <b>du restaurant</b>, donné par le gérant. Il ne se tape qu’une fois sur cette tablette.'],
@@ -564,6 +569,18 @@
     }
     var art = t.closest('[data-id]'); if (!art) return;
     var c = donnees.commandes.filter(function (x) { return x.id === art.getAttribute('data-id'); })[0];
+    if (t.closest('[data-annuler]')) {
+      var enLigne = c.paiement === 'payee' || c.paiement === 'remboursee_partiel';
+      if (!confirm('Annuler la commande N° ' + c.numero + ' (' + c.nom + ') ?\n\n' + (enLigne
+        ? 'Elle est payée en ligne : le client sera remboursé en entier (' + euros(c.total_cents - (c.rembourse_cents || 0)) + ') sur sa carte.'
+        : 'Elle est à payer sur place : elle disparaît simplement de l’écran.'))) return;
+      var bt = t.closest('[data-annuler]'); bt.disabled = true; bt.textContent = 'Annulation…';
+      appel('annuler', { id: c.id }).then(function (r) {
+        c.statut = 'annulee'; afficher();
+        if (r.rembourse) alert('Commande N° ' + c.numero + ' annulée. Le remboursement est parti : le client le voit sur son compte sous 5 à 10 jours.');
+      }).catch(function (x) { bt.disabled = false; bt.textContent = 'Annuler'; alert(x.message); });
+      return;
+    }
     var st = t.closest('[data-statut]');
     if (st && st.getAttribute('data-statut') === 'annulee' && !confirm('Le client n’est pas venu chercher la commande N° ' + c.numero + ' ? Elle sera annulée.')) return;
     if (st) { var nv = st.getAttribute('data-statut'); appel('statut', { id: c.id, statut: nv }).then(function () { c.statut = nv; afficher(); }); return; }
@@ -597,7 +614,6 @@
     return appel('ventes', { du: periode.du, au: periode.au }).then(function (j) { ventes = j; afficherVentes(); }).catch(function (e) { alert(e.message); });
   }
   function etatDe(c) {
-    if (c.paiement === 'sur_place' && c.statut === 'annulee') return 'Pas venu';
     return { recue: 'À préparer', prete: 'Prête', remise: c.mode === 'livraison' ? 'Livrée' : 'Remise', annulee: 'Annulée' }[c.statut] || c.statut;
   }
   function afficherVentes() {
