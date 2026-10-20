@@ -18,10 +18,15 @@
   var ecrire = function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 
   var session = lire('ns-espace', null);         // {jeton, snack}
-  var APPLI = !!(window.LocWebImprimante && window.LocWebImprimante.version);
+  // Impression des tickets COUPEE (Nicolas, 20/10) : pas de bouton, pas de ticket
+  // automatique, pas de reglage d'imprimante. Tout le code reste en dessous :
+  // passer IMPRESSION a true pour la rebrancher chez un client qui la veut.
+  var IMPRESSION = false;
+  var APPLI = IMPRESSION && !!(window.LocWebImprimante && window.LocWebImprimante.version);
   // Par defaut : l'appli si on est dedans, sinon rien (on regarde seulement).
   var reglage = lire('ns-espace-reglage', { impression: APPLI ? 'a-choisir' : 'aucune', son: true, ip: '', port: 9100 });
   if (reglage.impression === 'rawbt') reglage.impression = APPLI ? 'appli' : 'aucune';
+  if (!IMPRESSION) reglage.impression = 'aucune';
   var donnees = { commandes: [], snack: null, carte: [] };
   var imprimees = {};                               // deja envoyees cette session (evite les doublons)
   var canal = null, client = null, minuteur = null, horsLigne = false;
@@ -75,7 +80,7 @@
           carteMenu('data-fermetures', 'fermetures', 'Fermetures') +
           carteMenu('data-reglages', 'reglages', 'Réglages') +
           carteMenu('data-aide', 'aide', 'Aide') +
-          (APPLI ? '' : carteMenu('data-installer', 'installer', 'Installer l’appli')) +
+          (APPLI || !IMPRESSION ? '' : carteMenu('data-installer', 'installer', 'Installer l’appli')) +
           carteMenu('data-appliquer hidden', 'maj', 'Mise à jour prête') +
         '</nav></aside>' +
       '<main class="cu-zone">' +
@@ -135,7 +140,8 @@
     if (cp) cp.classList.toggle('cu-carte-alerte', !!pause);
     var ep = ((donnees.snack || {}).epuises || []).length;
     sousCarte('epuises', ep ? ep + ' plat' + (ep > 1 ? 's' : '') + ' retiré' + (ep > 1 ? 's' : '') : 'Tout est disponible');
-    sousCarte('reglages', reglage.impression === 'appli' ? (reglage.ip ? 'Imprime sur ' + reglage.ip : 'Imprimante à choisir')
+    if (!IMPRESSION) sousCarte('reglages', 'Sonnerie : ' + (reglage.son ? 'activée' : 'coupée'));
+    else sousCarte('reglages', reglage.impression === 'appli' ? (reglage.ip ? 'Imprime sur ' + reglage.ip : 'Imprimante à choisir')
       : reglage.impression === 'navigateur' ? 'Imprime depuis ce PC' : reglage.impression === 'a-choisir' ? 'À régler' : 'Regarde seulement');
     sousCarte('aide', 'Que faire si…');
     var nf = ((donnees.snack || {}).fermetures || []).filter(function (f) { return Date.parse(f.au) > Date.now(); }).length;
@@ -171,7 +177,7 @@
   function principale() { return reglage.impression === 'appli' || reglage.impression === 'navigateur'; }
   function boucle() {
     clearTimeout(minuteur);
-    var delai = principale() ? (canalOk && !horsLigne ? 5 * 60000 : 60000) : (canalOk ? 0 : 2 * 60000);
+    var delai = (principale() || !IMPRESSION) ? (canalOk && !horsLigne ? 5 * 60000 : 60000) : (canalOk ? 0 : 2 * 60000);
     if (!delai) return;
     minuteur = setTimeout(function () {
       if (document.hidden && !principale()) { boucle(); return; }
@@ -181,7 +187,7 @@
   // On rouvre la page (telephone sorti de la poche) : une mise a jour, une seule.
   document.addEventListener('visibilitychange', function () { if (!document.hidden && session && donnees.snack) rafraichir(); });
   function rafraichir() {
-    return appel('commandes', { principal: principale() }).then(function (j) {
+    return appel('commandes', { principal: principale() || !IMPRESSION }).then(function (j) {
       var avant = {}; donnees.commandes.forEach(function (c) { avant[c.id] = 1; });
       var premiere = !donnees.snack;
       donnees = j; horsLigne = false;
@@ -200,7 +206,7 @@
     e.className = 'cu-etat ' + (horsLigne ? 'cu-rouge' : pause ? 'cu-jaune' : 'cu-vert');
     majMenu();
     var a = $('[data-alerte]');
-    var nonImp = donnees.commandes.filter(function (c) { return !c.imprimee_le && c.statut === 'recue'; }).length;
+    var nonImp = IMPRESSION ? donnees.commandes.filter(function (c) { return !c.imprimee_le && c.statut === 'recue'; }).length : 0;
     var t = horsLigne ? 'Connexion perdue : les commandes arrivent quand même, elles s’afficheront au retour du réseau.' + (msg ? ' (' + msg + ')' : '')
       : nonImp ? (alerteImp || nonImp + ' ticket' + (nonImp > 1 ? 's' : '') + ' non imprimé' + (nonImp > 1 ? 's' : '') + ' : vérifie l’imprimante (papier, câble), puis « Réimprimer ».') : '';
     a.hidden = !t; a.textContent = t;
@@ -219,7 +225,7 @@
   }
   function carte(c) {
     var rb = c.paiement === 'sur_place' ? '<span class="cu-badge cu-a-payer">Sur place · ' + euros(c.total_cents) + '</span>' : c.paiement === 'remboursee' ? '<span class="cu-badge cu-rouge">Remboursée</span>' : c.paiement === 'remboursee_partiel' ? '<span class="cu-badge cu-jaune">Remb. ' + euros(c.rembourse_cents) + '</span>' : '<span class="cu-badge cu-vert">Payée</span>';
-    return '<article class="cu-cmd' + (c.imprimee_le ? '' : ' cu-non-imp') + '" data-id="' + c.id + '">' +
+    return '<article class="cu-cmd' + (c.imprimee_le || !IMPRESSION ? '' : ' cu-non-imp') + '" data-id="' + c.id + '">' +
       '<div class="cu-cmd-tete"><b class="cu-num">N° ' + c.numero + '</b><span class="cu-heure">' + (c.creneau ? 'Programmée · ' : '') + (c.mode === 'livraison' ? 'À livrer à <b>' : 'À remettre à <b>') + hm(c.heure_prevue) + '</b></span>' + rb + '</div>' +
       '<p class="cu-client">' + esc(c.nom) + ' · <a href="tel:' + esc(c.telephone) + '">' + esc(c.telephone) + '</a></p>' +
       (c.mode === 'livraison' ? '<p class="cu-mode cu-livraison"><b>Livraison</b> · ' + esc(c.adresse || '') + '</p>' : '<p class="cu-mode"><b>À emporter</b></p>') +
@@ -230,13 +236,13 @@
         (c.statut === 'prete' ? '<button type="button" class="cu-bouton cu-feu" data-statut="remise">' + (c.mode === 'livraison' ? 'Partie en livraison' : 'Remise au client') + '</button><button type="button" class="cu-bouton cu-discret" data-statut="recue">Pas prête</button>' : '') +
         (c.statut === 'remise' ? '<button type="button" class="cu-bouton cu-discret" data-statut="prete">Pas encore remise</button>' : '') +
         (c.paiement === 'sur_place' && c.statut !== 'remise' ? '<button type="button" class="cu-bouton cu-discret" data-statut="annulee">Pas venu</button>' : '') +
-        '<button type="button" class="cu-bouton cu-discret" data-reimprimer>' + (c.imprimee_le ? 'Réimprimer' : 'Imprimer') + '</button>' +
+        (IMPRESSION ? '<button type="button" class="cu-bouton cu-discret" data-reimprimer>' + (c.imprimee_le ? 'Réimprimer' : 'Imprimer') + '</button>' : '') +
         '<span class="cu-total">' + euros(c.total_cents) + '</span></div></article>';
   }
 
   /* ---------------- l'impression ---------------- */
   function imprimerEnAttente() {
-    if (!principale()) return;
+    if (!IMPRESSION || !principale()) return;
     donnees.commandes.filter(function (c) { return c.statut === 'recue' && !c.imprimee_le && !imprimees[c.id] && c.paiement !== 'remboursee'; })
       .forEach(function (c, n) { setTimeout(function () { imprimer(c); }, n * 1500); });
   }
@@ -430,22 +436,22 @@
   /* La fiche « Que faire si… » : les situations du service, dans les mots
      de la cuisine. Elle s'imprime aussi, pour l'afficher au mur. */
   var AIDE = [
-    ['Une commande arrive', 'Ça sonne et le ticket sort tout seul. Prépare-la pour l’heure écrite en gros (« À remettre à … »). Quand elle est prête, touche <b>Prête</b>. Quand le client la récupère, vérifie son <b>numéro</b>, puis touche <b>Remise au client</b>.'],
-    ['Le ticket ne sort pas', 'La commande devient rouge et un bandeau te prévient. Vérifie le <b>papier</b>, que l’imprimante est <b>allumée</b> et que son <b>câble réseau</b> est branché. Puis touche <b>Réimprimer</b> sur la commande. Pour tester : <b>Réglages → Ticket de test</b>. En attendant, prépare la commande en lisant l’écran : tout y est.'],
+    ['Une commande arrive', 'Ça sonne et elle s’affiche dans <b>À préparer</b>. Prépare-la pour l’heure écrite en gros (« À remettre à … »). Quand elle est prête, touche <b>Prête</b>. Quand le client la récupère, vérifie son <b>numéro</b>, puis touche <b>Remise au client</b>.'],
+    IMPRESSION && ['Le ticket ne sort pas', 'La commande devient rouge et un bandeau te prévient. Vérifie le <b>papier</b>, que l’imprimante est <b>allumée</b> et que son <b>câble réseau</b> est branché. Puis touche <b>Réimprimer</b> sur la commande. Pour tester : <b>Réglages → Ticket de test</b>. En attendant, prépare la commande en lisant l’écran : tout y est.'],
     ['Trop de monde, on ne suit plus', 'Touche <b>Pause</b> en haut. Le site n’accepte plus de nouvelles commandes ; celles déjà payées restent à préparer. Quand ça se calme, touche <b>Reprendre les commandes</b>.'],
     ['Il n’y a plus d’un produit', 'Touche <b>Plats épuisés</b>, puis le plat : il disparaît du site tout de suite. <b>Pense à le remettre</b> quand il revient (même bouton), sinon il reste caché.'],
     ['Un plat déjà payé manque', 'Appelle le client (son numéro est sur la commande) et propose-lui autre chose. S’il préfère être remboursé, préviens le <b>gérant</b> : il rembourse le plat depuis sa page, le client est recrédité sur sa carte.'],
-    ['Le client ne vient pas', 'La commande est déjà payée. Garde-la et appelle le client. Ne la marque <b>Remise</b> que quand il l’a vraiment récupérée.'],
-    ['« Hors ligne » en rouge', 'Internet est coupé ou faible. <b>Aucune commande n’est perdue</b> : elles s’afficheront et s’imprimeront au retour du réseau. Vérifie le Wi-Fi de la tablette. Si ça dure, préviens le gérant.'],
-    ['La tablette s’est éteinte', 'Rebranche-la sur son chargeur, rallume-la et ouvre la page <b>Cuisine</b> (l’icône Nikkie Sushi sur l’écran d’accueil). Pas besoin de retaper le code. Les commandes arrivées entre-temps s’impriment toutes seules.'],
+    ['Le client ne vient pas', 'Appelle-le : son numéro est sur la commande. Si elle est <b>payée en ligne</b>, garde-la et ne la marque <b>Remise</b> que quand il l’a vraiment récupérée. Si elle est <b>à payer sur place</b> et qu’il ne viendra pas, touche <b>Pas venu</b>.'],
+    ['« Hors ligne » en rouge', 'Internet est coupé ou faible. <b>Aucune commande n’est perdue</b> : elles s’afficheront au retour du réseau. Vérifie le Wi-Fi de la tablette. Si ça dure, préviens le gérant.'],
+    ['La tablette s’est éteinte', 'Rebranche-la sur son chargeur, rallume-la et ouvre la page <b>Cuisine</b> (l’icône Nikkie Sushi sur l’écran d’accueil). Pas besoin de retaper le code. Les commandes arrivées entre-temps s’affichent toutes seules.'],
     ['Le code est demandé', 'C’est le code à 8 chiffres <b>du restaurant</b>, donné par le gérant. Il ne se tape qu’une fois sur cette tablette.'],
     ['Fermeture du soir', 'Rien à faire : en dehors des services, le site ne prend que des commandes pour le service suivant. Pour une fermeture exceptionnelle (congés, imprévu), ouvre <b>Fermetures</b>.'],
-  ];
+  ].filter(Boolean);
   function panneauAide() {
     panneau('<h2>Que faire si…</h2><div class="cu-aide-liste">' +
       AIDE.map(function (a) { return '<details class="cu-aide-item"><summary>' + a[0] + '</summary><p>' + a[1] + '</p></details>'; }).join('') +
       '</div><p class="cu-aide-pied">Un problème que la fiche ne règle pas : appelle le gérant.</p>' +
-      '<div class="cu-actions"><button type="button" class="cu-bouton" data-aide-imprimer>Imprimer la fiche</button><button type="button" class="cu-bouton cu-feu" data-fermer>Fermer</button></div>');
+      '<div class="cu-actions">' + (IMPRESSION ? '<button type="button" class="cu-bouton" data-aide-imprimer>Imprimer la fiche</button>' : '') + '<button type="button" class="cu-bouton cu-feu" data-fermer>Fermer</button></div>');
   }
   function imprimerAide() {
     var f = document.createElement('iframe'); f.className = 'cu-iframe'; document.body.appendChild(f);
@@ -489,6 +495,12 @@
   }
 
   function panneauReglages() {
+    if (!IMPRESSION) {
+      panneau('<h2>Réglages</h2><label class="cu-choix"><span>Sonnerie à chaque commande</span><input type="checkbox" data-son' + (reglage.son ? ' checked' : '') + '></label>' +
+        '<div class="cu-actions"><button type="button" class="cu-bouton" data-test-son>Tester le son</button></div>' +
+        '<div class="cu-actions"><button type="button" class="cu-bouton cu-discret" data-deco>Se déconnecter</button><button type="button" class="cu-bouton" data-fermer>Fermer</button></div>');
+      return;
+    }
     panneau('<h2>Réglages de la tablette</h2><label class="cu-choix"><span>Impression</span><select data-imp>' +
       (APPLI ? [['appli', 'Cet appareil imprime (tablette principale)']] : []).concat([['navigateur', 'Navigateur (PC)'], ['aucune', 'Aucune : cet appareil regarde seulement']]).map(function (o) { return '<option value="' + o[0] + '"' + (reglage.impression === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
       '</select></label>' +
