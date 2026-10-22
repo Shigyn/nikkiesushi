@@ -21,7 +21,7 @@
   // Impression des tickets COUPEE (Nicolas, 20/10) : pas de bouton, pas de ticket
   // automatique, pas de reglage d'imprimante. Tout le code reste en dessous :
   // passer IMPRESSION a true pour la rebrancher chez un client qui la veut.
-  var IMPRESSION = false;
+  var IMPRESSION = true;   // rebranchee le 22/10 pour le test en cuisine
   var APPLI = IMPRESSION && !!(window.LocWebImprimante && window.LocWebImprimante.version);
   // Par defaut : l'appli si on est dedans, sinon rien (on regarde seulement).
   var reglage = lire('ns-espace-reglage', { impression: APPLI ? 'a-choisir' : 'aucune', son: true, ip: '', port: 9100 });
@@ -229,8 +229,12 @@
     majEtat();
   }
   function carte(c) {
-    var rb = c.paiement === 'sur_place' ? '<span class="cu-badge cu-a-payer">Sur place · ' + euros(c.total_cents) + '</span>' : c.paiement === 'remboursee' ? '<span class="cu-badge cu-rouge">Remboursée</span>' : c.paiement === 'remboursee_partiel' ? '<span class="cu-badge cu-jaune">Remb. ' + euros(c.rembourse_cents) + '</span>' : '<span class="cu-badge cu-vert">Payée</span>';
-    return '<article class="cu-cmd' + (c.imprimee_le || !IMPRESSION ? '' : ' cu-non-imp') + '" data-id="' + c.id + '">' +
+    var rb = c.paiement === 'remboursee' ? '<span class="cu-badge cu-rouge">Remboursée</span>' : c.paiement === 'remboursee_partiel' ? '<span class="cu-badge cu-jaune">Remb. ' + euros(c.rembourse_cents) + '</span>' : '';
+    // Sur place ou deja paye : se voit d'un coup d'oeil, en couleur, en haut de la commande.
+    var reglement = c.paiement === 'sur_place'
+      ? '<p class="cu-reglement cu-reglement-sp"><b>À ENCAISSER SUR PLACE</b><span>' + euros(c.total_cents) + '</span></p>'
+      : '<p class="cu-reglement cu-reglement-ok"><b>✓ PAYÉE EN LIGNE</b><span>rien à encaisser</span></p>';
+    return '<article class="cu-cmd' + (c.paiement === 'sur_place' ? ' cu-cmd-sp' : ' cu-cmd-ok') + (c.imprimee_le || !IMPRESSION ? '' : ' cu-non-imp') + '" data-id="' + c.id + '">' + reglement +
       '<div class="cu-cmd-tete"><b class="cu-num">N° ' + c.numero + '</b><span class="cu-heure">' + (c.creneau ? 'Programmée · ' : '') + (c.mode === 'livraison' ? 'À livrer à <b>' : 'À remettre à <b>') + hm(c.heure_prevue) + '</b></span>' + rb + '</div>' +
       '<p class="cu-client">' + esc(c.nom) + ' · <a href="tel:' + esc(c.telephone) + '">' + esc(c.telephone) + '</a></p>' +
       (c.mode === 'livraison' ? '<p class="cu-mode cu-livraison"><b>Livraison</b> · ' + esc(c.adresse || '') + '</p>' : '<p class="cu-mode"><b>À emporter</b></p>') +

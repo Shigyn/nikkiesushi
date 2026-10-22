@@ -17,9 +17,13 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '17';
+const V = '18';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
-const STRIPE_PK = process.env.STRIPE_PK || '';
+// Sans cle, le site repasse en apercu et plus rien n'arrive en cuisine : en apercu,
+// on prend toute seule la cle TEST du projet (meme garde-fou qu'Anas Grill, 22/10).
+const PK_TEST = path.join(ICI, '..', 'projet-8-snacks', 'STRIPE-PK-TEST.txt');
+const STRIPE_PK = (process.env.STRIPE_PK || (!PROD && fs.existsSync(PK_TEST) ? fs.readFileSync(PK_TEST, 'utf8') : '')).trim();
+COMMANDE.apercuToujoursOuvert = !PROD;
 if (STRIPE_PK) { COMMANDE.paiement = 'stripe'; COMMANDE.stripePk = STRIPE_PK; }
 if (PROD && COMMANDE.paiement === 'apercu') throw new Error('Mise en ligne : passer COMMANDE.paiement sur "stripe" (ou "sur_place").');
 
@@ -219,7 +223,7 @@ ${corps(r)}
 }
 
 /* ---------------- blocs ---------------- */
-const badges = (i) => [i.sig ? '<span class="badge badge-nikkei">Nikkei</span>' : '', i.vg ? '<span class="badge badge-vg">Végétarien</span>' : '', i.midi ? '<span class="badge badge-midi">Le midi</span>' : ''].join('');
+const badges = (i) => [i.maison ? '<span class="badge badge-maison">Spécialité de la maison</span>' : '', i.sig ? '<span class="badge badge-nikkei">Nikkei</span>' : '', i.vg ? '<span class="badge badge-vg">Végétarien</span>' : '', i.midi ? '<span class="badge badge-midi">Le midi</span>' : ''].join('');
 const boutonAjout = (i) => `<button type="button" class="ajouter" data-ajouter="${i.id}" aria-label="Ajouter ${esc(i.n)} à la commande">${I.plus}</button>`;
 
 const carteVedette = (r, id) => {
@@ -369,7 +373,7 @@ ${bandeauSaveurs()}
     </div>
     <div class="histoire-texte reveler">
       <p class="surtitre">Cuisine nikkei</p>
-      <h2>Né à Lima, <em>pensé à Tokyo</em></h2>
+      <h2>Cuisine japonaise <em>et péruvienne</em></h2>
       <p>À la fin du XIXe siècle, des Japonais partent travailler au Pérou. Loin de chez eux, ils cuisinent avec ce qu’ils trouvent : le piment péruvien remplace le wasabi, le citron vert relève le poisson cru. Les Péruviens les appellent les Nikkei, et leur cuisine devient l’une des plus inventives au monde.</p>
       <p>Rokib et Laura ont ouvert Nikkie Sushi en mai 2026, la première adresse nikkei de Béziers. Lui en cuisine, elle en salle, tous deux formés au lycée hôtelier Jean-Moulin. Le principe : des recettes traditionnelles, une touche personnelle, et tout préparé à la minute.</p>
       <a class="lien-fleche" href="${r}restaurant/">Le restaurant ${I.fleche}</a>
@@ -463,7 +467,7 @@ ajouter('livraison-sushi-beziers/', {
     <div class="tete-section tete-centree reveler"><p class="surtitre">Comment ça marche</p><h2>Trois gestes, c’est parti</h2></div>
     <ol class="etapes">
       <li class="reveler"><b>Composez votre commande</b><span>Toute la carte est disponible en livraison, du plateau à la soupe miso.</span></li>
-      <li class="reveler"><b>Choisissez l’heure et payez</b><span>Dès que possible ou plus tard dans le service. Paiement par carte, sécurisé.</span></li>
+      <li class="reveler"><b>Choisissez l’heure et payez</b><span>Dès 10h, pour ce midi ou ce soir. Paiement par carte ou sur place.</span></li>
       <li class="reveler"><b>On prépare, on livre</b><span>Préparé à la minute, livré chez vous. Vous suivez l’avancement depuis votre téléphone.</span></li>
     </ol>
   </div>
@@ -473,7 +477,7 @@ ajouter('livraison-sushi-beziers/', {
   <div class="cadre conditions">
     <div class="condition reveler"><b>${COMMANDE.livraison.minimum} €</b><span>minimum de commande en livraison</span></div>
     <div class="condition reveler"><b>~${COMMANDE.livraison.delaiMin} min</b><span>en moyenne, préparé à la minute</span></div>
-    <div class="condition reveler"><b>Midi &amp; soir</b><span>12h – 14h30 · 18h45 – 22h, sauf mercredi</span></div>
+    <div class="condition reveler"><b>Midi &amp; soir</b><span>12h – 14h30 · 18h45 – 22h, sauf mercredi. Pas de livraison le lundi</span></div>
     <div class="condition reveler"><b>Béziers</b><span>${COMMANDE.livraison.codesPostaux.join(', ')} — ailleurs, appelez-nous</span></div>
   </div>
 </section>
@@ -605,7 +609,7 @@ for (const [ch, o] of PAGES) {
   fs.writeFileSync(path.join(ICI, ch, 'index.html'), page(ch, o));
 }
 // La carte pour le panier : ce que commande.js doit savoir de chaque plat.
-const pourPanier = Object.fromEntries(TOUS.map((i) => [i.id, { n: i.n, p: i.p, ...(i.q ? { q: i.q } : {}), ...(i.choix ? { choix: i.choix } : {}), ...(i.midi ? { midi: 1 } : {}), ...(i.photo ? { photo: i.photo } : {}) }]));
+const pourPanier = Object.fromEntries(TOUS.map((i) => [i.id, { n: i.n, p: i.p, ...(i.q ? { q: i.q } : {}), ...(i.choix ? { choix: i.choix } : {}), ...(i.midi ? { midi: 1 } : {}), ...(i.attente ? { attente: i.attente } : {}), ...(i.photo ? { photo: i.photo } : {}) }]));
 fs.writeFileSync(path.join(ICI, 'assets', 'carte.json'), JSON.stringify(pourPanier));
 // L'espace pro (cuisine + gestion) : page a part, jamais indexee, sans mesure.
 fs.mkdirSync(path.join(ICI, 'espace'), { recursive: true });
@@ -630,8 +634,8 @@ fs.writeFileSync(path.join(ICI, 'espace', 'version.json'), JSON.stringify({ v: V
 const DOSSIER_NS = path.join(ICI, '..', 'supabase-functions', 'supabase', 'functions', '_ns');
 fs.mkdirSync(DOSSIER_NS, { recursive: true });
 fs.writeFileSync(path.join(DOSSIER_NS, 'ns-carte.ts'), '// Genere par nikkie-sushi/build.mjs — ne pas modifier a la main.\nexport const CARTE: any = ' + JSON.stringify({
-  reglages: { horaires: HORAIRES, livraison: COMMANDE.livraison, retrait: COMMANDE.retrait, pas: COMMANDE.pas, avanceParCreneau: 3 },
-  plats: Object.fromEntries(TOUS.map((i) => [i.id, { n: i.n, p: i.p, ...(i.choix ? { choix: i.choix } : {}), ...(i.midi ? { midi: 1 } : {}) }])),
+  reglages: { horaires: HORAIRES, livraison: COMMANDE.livraison, retrait: COMMANDE.retrait, pas: COMMANDE.pas, avanceParCreneau: 3, ouvertureCommandes: COMMANDE.ouvertureCommandes },
+  plats: Object.fromEntries(TOUS.map((i) => [i.id, { n: i.n, p: i.p, ...(i.choix ? { choix: i.choix } : {}), ...(i.midi ? { midi: 1 } : {}), ...(i.attente ? { attente: i.attente } : {}) }])),
   categories: TOUS.map((i) => ({ id: i.id, n: i.n })),
 }) + ';\n');
 fs.writeFileSync(path.join(ICI, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PAGES.filter(([ch]) => !/cgv|confidentialite|mentions/.test(ch)).map(([ch]) => `  <url><loc>${abs(ch)}</loc></url>`).join('\n')}\n</urlset>\n`);

@@ -54,8 +54,11 @@ export const HORAIRES_SCHEMA = [
 // (minimum 20 EUR) ; zone et frais sont a confirmer avec Rokib.
 export const COMMANDE = {
   paiement: 'apercu',
-  livraison: { minimum: 20, frais: 0, codesPostaux: ['34500'], delaiMin: 45 },
-  retrait: { delaiMin: 20 },
+  // Rokib, 22/10 : 45 min pour une commande (1 h pour la Nikki Box, champ `attente`
+  // du plat), pas de livraison le lundi, commandes ouvertes des 10 h POUR LA JOURNEE.
+  livraison: { minimum: 20, frais: 0, codesPostaux: ['34500'], delaiMin: 45, joursSans: [1] },
+  retrait: { delaiMin: 45 },
+  ouvertureCommandes: 600,
   pas: 15,
 };
 
@@ -68,7 +71,7 @@ export const AVIS = [
 
 export const FAQ = [
   { q: 'C’est quoi, la cuisine nikkei ?', a: 'Une cuisine née au Pérou à la fin du XIXe siècle, quand des Japonais émigrés ont adapté leurs recettes aux produits locaux : piment péruvien à la place du wasabi, citron vert, mangue, maïs. On la retrouve dans nos sushis nikkei, nos ceviches et nos tacos.' },
-  { q: 'Livrez-vous à domicile ?', a: 'Oui, à Béziers, pendant nos services du midi et du soir, à partir de 20 € de commande. Commandez en ligne, choisissez votre heure, et nous vous livrons.' },
+  { q: 'Livrez-vous à domicile ?', a: 'Oui, à Béziers, pendant nos services du midi et du soir (sauf le lundi), à partir de 20 € de commande. Commandez en ligne, choisissez votre heure, et nous vous livrons.' },
   { q: 'Comment payer ma commande ?', a: 'En ligne par carte bancaire au moment de commander, sur une page de paiement sécurisée. Votre commande part en cuisine dès que le paiement est validé.' },
   { q: 'Faut-il réserver pour manger sur place ?', a: 'C’est conseillé : la salle compte douze couverts, plus la terrasse sur la place de la Madeleine. Les réservations se font par téléphone au 07 50 65 01 24.' },
   { q: 'Avez-vous des plats végétariens ?', a: 'Oui : Veggie Box, poke veggie, california veggie, spring rolls veggie, maki avocat cheese, gyoza veggie, guacamole et edamame.' },

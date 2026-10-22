@@ -131,11 +131,18 @@
 
   /* Ferme ? On le dit tout de suite, et on propose de commander pour le
      prochain service — comme chez KSM, mais sans bloquer. */
+  // Les commandes en ligne ouvrent a 10 h, pour la journee (Rokib, 22/10) : des
+  // 10 h on peut commander pour ce midi comme pour ce soir, le site n'est pas « ferme ».
   function majBandeau() {
-    var d = new Date(), s = H.services(d, 1)[0];
+    var d = new Date(), s = H.services(d, 1)[0], now = d.getHours() * 60 + d.getMinutes();
+    var ouvre = CFG.ouvertureCommandes || 0, hOuvre = H.hm(ouvre).replace(':00', '');
     if (s && s.enCours) { bandeau.hidden = true; return; }
     bandeau.hidden = false;
-    bandeau.innerHTML = s ? '<b>Fermé en ce moment.</b> Nous ouvrons ' + H.quand(s, d) + ' à ' + H.hm(s.debut) + ' : vous pouvez déjà commander pour ce service.' : '<b>Fermé.</b> Appelez-nous pour commander.';
+    var auj = s && H.quand(s, d) === 'aujourd’hui';
+    if (auj && now >= ouvre) bandeau.innerHTML = '<b>Commandes ouvertes.</b> Choisissez votre heure pour aujourd’hui : service à partir de ' + H.hm(s.debut) + '.';
+    else if (auj) bandeau.innerHTML = '<b>Fermé pour l’instant.</b> Les commandes en ligne ouvrent à ' + hOuvre + ', pour la journée.';
+    else if (s) bandeau.innerHTML = '<b>Fermé pour aujourd’hui.</b> Nous rouvrons ' + H.quand(s, d) + ' : commandes en ligne dès ' + hOuvre + ' ce jour-là.';
+    else bandeau.innerHTML = '<b>Fermé.</b> Appelez-nous pour commander.';
   }
 
   function rendre() {
@@ -183,10 +190,23 @@
   }
 
   /* 2. Livraison ou a emporter, l'heure, les coordonnees. */
+  // Le delai : 45 min, 1 h si le panier contient la Nikki Box (champ `attente`).
+  function delaiPanier(mode) {
+    var base = mode === 'livraison' ? CFG.livraison.delaiMin : CFG.retrait.delaiMin;
+    return etat.panier.reduce(function (m, l) { var p = CARTE && CARTE[l.id]; return Math.max(m, (p && p.attente) || 0); }, base);
+  }
+  function lundiSansLivraison(mode) { return mode === 'livraison' && (CFG.livraison.joursSans || []).indexOf(new Date().getDay()) >= 0; }
   function creneaux(mode) {
+    var g = creneauxDuJour(mode);
+    // Apercu : on laisse tester a toute heure (le serveur de demo ignore les horaires).
+    if (!g.length && CFG.apercuToujoursOuvert && !lundiSansLivraison(mode)) g = [{ s: null, nom: 'Aperçu', liste: [], asap: true }];
+    return g;
+  }
+  function creneauxDuJour(mode) {
     var d = new Date(), now = d.getHours() * 60 + d.getMinutes();
-    var delai = (mode === 'livraison' ? CFG.livraison.delaiMin : CFG.retrait.delaiMin), pas = CFG.pas || 15;
-    return H.services(d, 3).map(function (s) {
+    var delai = delaiPanier(mode), pas = CFG.pas || 15;
+    if (lundiSansLivraison(mode) || now < (CFG.ouvertureCommandes || 0)) return [];
+    return H.services(d, 3).filter(function (s) { return H.quand(s, d) === 'aujourd’hui'; }).map(function (s) {
       var depart = s.enCours ? now + delai : s.debut + delai;
       var t = Math.ceil(depart / pas) * pas, liste = [];
       for (; t <= s.fin; t += pas) liste.push(t);
@@ -198,7 +218,7 @@
     titre.textContent = 'Livraison ou à emporter';
     var i = etat.infos, groupes = creneaux(i.mode);
     var options = groupes.map(function (g, gi) {
-      return '<optgroup label="' + esc(g.nom) + '">' + (g.asap && gi === 0 ? '<option value="' + gi + '|asap">Dès que possible (≈ ' + (i.mode === 'livraison' ? CFG.livraison.delaiMin : CFG.retrait.delaiMin) + ' min)</option>' : '') +
+      return '<optgroup label="' + esc(g.nom) + '">' + (g.asap && gi === 0 ? '<option value="' + gi + '|asap">Dès que possible (≈ ' + delaiPanier(i.mode) + ' min)</option>' : '') +
         g.liste.map(function (t) { return '<option value="' + gi + '|' + t + '">' + esc(g.nom) + ' · ' + H.hm(t) + '</option>'; }).join('') + '</optgroup>';
     }).join('');
     corps.innerHTML = '<form class="form" data-form novalidate>' +
@@ -217,7 +237,14 @@
     if (i.creneau && sel.querySelector('option[value="' + i.creneau + '"]')) sel.value = i.creneau;
     pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-suite>Vérifier ma commande</button>';
     corps.querySelectorAll('[name=mode]').forEach(function (r) { r.addEventListener('change', function () { lireForm(); etat.infos.mode = r.value; garder(); rendre(); }); });
-    if (!groupes.length) { sel.outerHTML = '<p class="alerte">Pas de créneau disponible en ligne pour le moment : appelez-nous.</p>'; }
+    if (!groupes.length) {
+      var nowM = new Date().getHours() * 60 + new Date().getMinutes();
+      sel.outerHTML = '<p class="alerte">' + (lundiSansLivraison(i.mode) ? 'Pas de livraison le lundi : choisissez « À emporter ».'
+        : nowM < (CFG.ouvertureCommandes || 0) ? 'Les commandes en ligne ouvrent à ' + H.hm(CFG.ouvertureCommandes).replace(':00', '') + ', pour la journée.'
+        : 'Plus de créneau aujourd’hui : les commandes en ligne rouvrent demain dès ' + H.hm(CFG.ouvertureCommandes || 0).replace(':00', '') + '. Vous pouvez aussi nous appeler.') + '</p>';
+    }
+    if (delaiPanier(i.mode) > (i.mode === 'livraison' ? CFG.livraison.delaiMin : CFG.retrait.delaiMin) && groupes.length)
+      corps.querySelector('.champ').insertAdjacentHTML('afterend', '<p class="note-delai">La Nikki Box demande 1 h de préparation : les heures proposées en tiennent compte.</p>');
   }
   function lireForm() {
     var f = $('[data-form]'); if (!f) return;

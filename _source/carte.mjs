@@ -28,7 +28,7 @@ export const CARTE = [
     id: 'box', nom: 'Box à partager', intro: 'Pour deux, ou pour une tablée.',
     items: [
       { id: 'duo-box', n: 'Duo Box', p: 42, d: '6 cheesy fondant, 8 spring rolls veggie, 6 maki avocat cheese, 8 california saumon avocat, 8 Samba Takuan, 2 sushi saumon, 2 sushi thon' },
-      { id: 'nikki-box', n: 'Nikki Box', p: 60, d: '6 maki avocat cheese, 8 Nikkie Pink, 8 Samba Exotic, 8 Samba Tuna Peruano, 8 Samba Rocoto, 2 sushi saumon nikkei, 2 sushi thon nikkei', photo: 'nikki-box-terrasse-madeleine', sig: true },
+      { id: 'nikki-box', n: 'Nikki Box', p: 60, attente: 60, d: '6 maki avocat cheese, 8 Nikkie Pink, 8 Samba Exotic, 8 Samba Tuna Peruano, 8 Samba Rocoto, 2 sushi saumon nikkei, 2 sushi thon nikkei', photo: 'nikki-box-terrasse-madeleine', sig: true },
     ],
   },
   {
@@ -41,7 +41,7 @@ export const CARTE = [
     ],
   },
   {
-    id: 'nikkei-rolls', nom: 'Nikkei rolls', intro: 'Les créations du chef, entre Tokyo et Lima. 8 pièces.',
+    id: 'nikkei-rolls', nom: 'Nikkei rolls', intro: 'Les créations du chef, entre cuisine japonaise et péruvienne. 8 pièces.',
     items: [
       { id: 'nikkie-truffe', n: 'Nikkie Truffe', p: 16, q: '8 pièces', d: 'Ebi fry, daurade, concombre, carotte, carpaccio de truffe d’été, mayonnaise, ciboulette', s: ['teriyaki', 'huile à la truffe', 'mayonnaise ciboulette'], photo: 'nikkie-truffe', sig: true },
       { id: 'samba-tuna-peruano', n: 'Samba Tuna Peruano', p: 13, q: '8 pièces', d: 'Thon, avocat, concombre, oignons frits, oignons nouveaux', s: ['teriyaki', 'spicy mayo'], photo: 'samba-tuna-peruano', sig: true },
@@ -53,7 +53,7 @@ export const CARTE = [
     ],
   },
   {
-    id: 'sushi-tacos', nom: 'Sushi nikkei & tacos', intro: 'Le tacos nikkei : une pâte à gyoza croustillante, garnie comme un ceviche.',
+    id: 'sushi-tacos', nom: 'Sushi nikkei & tacos', intro: 'Notre spécialité de la maison : le tacos nikkei, une pâte à gyoza croustillante garnie comme un ceviche.',
     items: [
       { id: 'sushi-saumon-nikkei', n: 'Sushi saumon nikkei', p: 3, q: '1 pièce', d: 'Saumon, pousses de moutarde, épices japonaises', s: ['maracuja'], photo: 'sushi-nikkei-saumon-thon-daurade', sig: true },
       { id: 'sushi-thon-nikkei', n: 'Sushi thon nikkei', p: 3.5, q: '1 pièce', d: 'Thon, graines de sésame, wasabi, oignon rouge, piment rouge', s: ['spicy mayo'], sig: true },
@@ -61,9 +61,9 @@ export const CARTE = [
       { id: 'sushi-saumon', n: 'Sushi saumon', p: 4.5, q: '2 pièces' },
       { id: 'sushi-thon', n: 'Sushi thon', p: 5, q: '2 pièces' },
       { id: 'sushi-daurade', n: 'Sushi daurade', p: 5.5, q: '2 pièces' },
-      { id: 'tacos-saumon', n: 'Tacos saumon', p: 12.5, q: '3 pièces', d: 'Saumon, grenade, concombre, oignons rouges', s: ['spicy mayo'], sig: true },
-      { id: 'tacos-thon', n: 'Tacos thon', p: 13, q: '3 pièces', d: 'Thon, concombre, oignon rouge, ciboulette, graines de sésame', s: ['soja yuzu'], sig: true },
-      { id: 'tacos-daurade', n: 'Tacos daurade', p: 13, q: '3 pièces', d: 'Daurade, mangue, oignons rouges, piment rouge', s: ['maracuja'], sig: true },
+      { id: 'tacos-saumon', maison: true, n: 'Tacos saumon', p: 12.5, q: '3 pièces', d: 'Saumon, grenade, concombre, oignons rouges', s: ['spicy mayo'], sig: true },
+      { id: 'tacos-thon', maison: true, n: 'Tacos thon', p: 13, q: '3 pièces', d: 'Thon, concombre, oignon rouge, ciboulette, graines de sésame', s: ['soja yuzu'], sig: true },
+      { id: 'tacos-daurade', maison: true, n: 'Tacos daurade', p: 13, q: '3 pièces', d: 'Daurade, mangue, oignons rouges, piment rouge', s: ['maracuja'], sig: true },
     ],
   },
   {

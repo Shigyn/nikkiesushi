@@ -237,3 +237,11 @@ body.gerant .ge-kpi { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)
 .cu-pause:hover { color: var(--texte); border-color: var(--orange); }
 .cu-pause.cu-pause-on { background: rgba(255, 190, 40, .15); border-color: rgba(255, 190, 40, .6); color: #ffd36a; }
 .cu-annuler { color: #ffb4ac; }
+
+/* Paiement sur place / en ligne, en couleur (22/10) */
+.cu-reglement { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: -14px -16px 2px; padding: 9px 16px; border-radius: 15px 15px 0 0; font: 700 .85rem/1.2 var(--etroite, inherit); letter-spacing: .06em; }
+.cu-reglement span { font-weight: 600; letter-spacing: 0; }
+.cu-reglement-sp { background: #ffb020; color: #1b0d00; }
+.cu-reglement-sp span { font-size: 1.05rem; font-weight: 800; }
+.cu-reglement-ok { background: rgba(80, 190, 120, .16); color: #8fe0a8; }
+.cu-cmd-sp { box-shadow: inset 4px 0 0 #ffb020; }

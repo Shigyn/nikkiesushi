@@ -498,3 +498,7 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 .page-carte .plat:hover { border-color: var(--ligne-forte); }
 .page-carte .categorie-tete[data-kanji]::after { font-size: clamp(3.6rem, 2.2rem + 5vw, 6.8rem); bottom: -10px; }
 @media (max-width: 760px) { .page-carte .plats { gap: 10px; } .page-carte .plat { padding: 12px; border-radius: 16px; } }
+
+/* « Specialite de la maison » sur les tacos (22/10) */
+.badge-maison { background: linear-gradient(135deg, #efdba6, #d6b264); color: #1b1408; border-color: transparent; font-weight: 700; }
+.note-delai { margin: -4px 0 12px; font-size: .85rem; color: var(--or-clair); }
