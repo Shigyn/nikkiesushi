@@ -245,3 +245,12 @@ body.gerant .ge-kpi { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)
 .cu-reglement-sp span { font-size: 1.05rem; font-weight: 800; }
 .cu-reglement-ok { background: rgba(80, 190, 120, .16); color: #8fe0a8; }
 .cu-cmd-sp { box-shadow: inset 4px 0 0 #ffb020; }
+
+/* Ventes : carte / caisse, pour la compta (24/10) */
+.ns-compta { grid-column: span 2; border-radius: 14px; padding: 14px 16px !important; }
+.ns-compta b { font-size: 1.7rem !important; }
+.ns-compta span { display: block; font-size: .8rem; opacity: .8; margin-top: 2px; }
+.ns-compta-carte { background: rgba(80, 190, 120, .12) !important; border: 1px solid rgba(80, 190, 120, .45) !important; }
+.ns-compta-caisse { background: rgba(255, 176, 32, .12) !important; border: 1px solid rgba(255, 176, 32, .55) !important; }
+.ns-p-carte { color: #8fe0a8; } .ns-p-caisse { color: #ffc560; }
+@media (max-width: 700px) { .ns-compta { grid-column: 1 / -1; } }
