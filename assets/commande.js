@@ -207,7 +207,8 @@
   function creneaux(mode) {
     var g = creneauxDuJour(mode);
     // Apercu : on laisse tester a toute heure (le serveur de demo ignore les horaires).
-    if (!g.length && CFG.apercuToujoursOuvert && !lundiSansLivraison(mode)) g = [{ s: null, nom: 'Aperçu', liste: [], asap: true }];
+    var apresMidi = new Date().getHours() * 60 + new Date().getMinutes() >= 900;
+    if (!g.length && CFG.apercuToujoursOuvert && !lundiSansLivraison(mode) && !(panierMidi() && apresMidi)) g = [{ s: null, nom: 'Aperçu', liste: [], asap: true }];
     return g;
   }
   function creneauxDuJour(mode) {
