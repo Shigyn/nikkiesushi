@@ -17,7 +17,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '19';
+const V = '20';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
 // Sans cle, le site repasse en apercu et plus rien n'arrive en cuisine : en apercu,
 // on prend toute seule la cle TEST du projet (meme garde-fou qu'Anas Grill, 22/10).
@@ -477,7 +477,7 @@ ajouter('livraison-sushi-beziers/', {
   <div class="cadre conditions">
     <div class="condition reveler"><b>${COMMANDE.livraison.minimum} €</b><span>minimum de commande en livraison</span></div>
     <div class="condition reveler"><b>~${COMMANDE.livraison.delaiMin} min</b><span>en moyenne, préparé à la minute</span></div>
-    <div class="condition reveler"><b>Midi &amp; soir</b><span>12h – 14h30 · 18h45 – 22h, sauf mercredi. Pas de livraison le lundi</span></div>
+    <div class="condition reveler"><b>Midi &amp; soir</b><span>12h – 14h30 · 18h45 – 22h, sauf mercredi. Pas de livraison le lundi ni le dimanche midi</span></div>
     <div class="condition reveler"><b>Béziers</b><span>${COMMANDE.livraison.codesPostaux.join(', ')} — ailleurs, appelez-nous</span></div>
   </div>
 </section>

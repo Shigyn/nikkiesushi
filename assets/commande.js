@@ -196,6 +196,14 @@
     return etat.panier.reduce(function (m, l) { var p = CARTE && CARTE[l.id]; return Math.max(m, (p && p.attente) || 0); }, base);
   }
   function lundiSansLivraison(mode) { return mode === 'livraison' && (CFG.livraison.joursSans || []).indexOf(new Date().getDay()) >= 0; }
+  // Pas de livraison sur certains services (le dimanche midi, Rokib 25/10).
+  function serviceSansLivraison(s, mode) {
+    if (mode !== 'livraison') return false;
+    var j = s.jour.getDay(), midi = s.debut < 900;
+    return (CFG.livraison.joursSans || []).indexOf(j) >= 0 || (CFG.livraison.servicesSans || []).some(function (x) { return x[0] === j && (x[1] === 'midi') === midi; });
+  }
+  // Une formule du midi dans le panier : seulement les heures du midi (Rokib 25/10).
+  function panierMidi() { return etat.panier.some(function (l) { var p = CARTE && CARTE[l.id]; return p && p.midi; }); }
   function creneaux(mode) {
     var g = creneauxDuJour(mode);
     // Apercu : on laisse tester a toute heure (le serveur de demo ignore les horaires).
@@ -206,7 +214,8 @@
     var d = new Date(), now = d.getHours() * 60 + d.getMinutes();
     var delai = delaiPanier(mode), pas = CFG.pas || 15;
     if (lundiSansLivraison(mode) || now < (CFG.ouvertureCommandes || 0)) return [];
-    return H.services(d, 3).filter(function (s) { return H.quand(s, d) === 'aujourd’hui'; }).map(function (s) {
+    var midiSeul = panierMidi();
+    return H.services(d, 3).filter(function (s) { return H.quand(s, d) === 'aujourd’hui' && !serviceSansLivraison(s, mode) && (!midiSeul || s.debut < 900); }).map(function (s) {
       var depart = s.enCours ? now + delai : s.debut + delai;
       var t = Math.ceil(depart / pas) * pas, liste = [];
       for (; t <= s.fin; t += pas) liste.push(t);
@@ -239,7 +248,10 @@
     corps.querySelectorAll('[name=mode]').forEach(function (r) { r.addEventListener('change', function () { lireForm(); etat.infos.mode = r.value; garder(); rendre(); }); });
     if (!groupes.length) {
       var nowM = new Date().getHours() * 60 + new Date().getMinutes();
+      var dim = i.mode === 'livraison' && new Date().getDay() === 0 && nowM < 900;
       sel.outerHTML = '<p class="alerte">' + (lundiSansLivraison(i.mode) ? 'Pas de livraison le lundi : choisissez « À emporter ».'
+        : panierMidi() && nowM >= (CFG.ouvertureCommandes || 0) ? 'Les formules du midi se commandent seulement pour le service du midi. Pour ce soir, retirez-les de votre panier.'
+        : dim ? 'Pas de livraison le dimanche midi : choisissez « À emporter », ou une livraison ce soir.'
         : nowM < (CFG.ouvertureCommandes || 0) ? 'Les commandes en ligne ouvrent à ' + H.hm(CFG.ouvertureCommandes).replace(':00', '') + ', pour la journée.'
         : 'Plus de créneau aujourd’hui : les commandes en ligne rouvrent demain dès ' + H.hm(CFG.ouvertureCommandes || 0).replace(':00', '') + '. Vous pouvez aussi nous appeler.') + '</p>';
     }
@@ -266,7 +278,7 @@
     var midi = etat.panier.some(function (l) { return CARTE[l.id].midi; });
     if (midi && i.creneau) {
       var g = creneaux(i.mode)[+i.creneau.split('|')[0]];
-      if (g && g.s.debut >= 900) err.push('Les formules du midi ne sont servies qu’au service du midi : choisissez une heure le midi, ou retirez-les.');
+      if (g && g.s && g.s.debut >= 900) err.push('Les formules du midi ne sont servies qu’au service du midi : choisissez une heure le midi, ou retirez-les.');
     }
     var a = $('[data-alerte]');
     a.hidden = !err.length; a.textContent = err[0] || '';
