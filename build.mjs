@@ -17,7 +17,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '26';
+const V = '27';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
 // Sans cle, le site repasse en apercu et plus rien n'arrive en cuisine : en apercu,
 // on prend toute seule la cle TEST du projet (meme garde-fou qu'Anas Grill, 22/10).
@@ -602,11 +602,13 @@ ajouter('confidentialite/', {
   corps: () => `
 <section class="tete-page"><div class="cadre"><h1>Politique de confidentialité</h1></div></section>
 <section class="section"><div class="cadre etroit texte-riche">
-  <h2>Les données recueillies</h2><p>Pour une commande : votre nom, votre téléphone, votre adresse de livraison le cas échéant, et votre commentaire. Elles servent uniquement à préparer, livrer et suivre votre commande.</p>
-  ${EN_LIGNE ? '<h2>Paiement</h2><p>Les données de carte bancaire sont saisies et traitées par Stripe ; elles ne transitent jamais par le restaurant.</p>' : ''}
-  <h2>Conservation</h2><p>Les données de commande sont conservées le temps nécessaire à la gestion des commandes et aux obligations comptables.</p>
-  <h2>Mesure d’audience</h2><p>Le site utilise Google Analytics pour mesurer sa fréquentation de façon anonymisée.</p>
-  <h2>Vos droits</h2><p>Vous pouvez demander l’accès, la rectification ou la suppression de vos données en écrivant à ${E.email}. Aucune donnée n’est vendue ni cédée.</p>
+  <h2>Responsable du traitement</h2><p>${E.raison}, ${E.rue}, ${E.codePostal} ${E.ville} — ${E.email}.</p>
+  <h2>Les données recueillies</h2><p>Pour une commande : votre nom, votre téléphone, votre adresse de livraison le cas échéant, et votre commentaire. Elles servent uniquement à préparer, livrer et suivre votre commande (exécution de la commande). Elles ne sont ni vendues ni cédées, et ne servent à aucune prospection.</p>
+  <h2>Qui y a accès</h2><p>Le restaurant, pour préparer et livrer votre commande. Ses prestataires techniques, uniquement pour faire fonctionner le service : LocWeb (réalisation et maintenance du site), GitHub (hébergement des pages), Supabase (enregistrement des commandes, serveurs dans l’Union européenne)${EN_LIGNE ? ' et Stripe (paiement)' : ''}.</p>
+  ${EN_LIGNE ? '<h2>Paiement</h2><p>Les données de carte bancaire sont saisies et traitées par Stripe ; elles ne transitent jamais par le restaurant ni par le site. Stripe dépose les cookies nécessaires à la sécurité du paiement et à la lutte contre la fraude.</p>' : ''}
+  <h2>Conservation</h2><p>Vos nom, téléphone et adresse sont conservés au plus 3 ans après votre dernière commande, puis effacés ; le détail des ventes, sans vos coordonnées, est gardé pour la comptabilité du restaurant.</p>
+  <h2>Cookies et stockage</h2><p>Le site n’utilise ni cookie publicitaire ni mesure d’audience. Il garde seulement dans votre navigateur ce qui est indispensable à la commande : votre panier, et un identifiant anonyme de l’appareil qui protège le restaurant contre les fausses commandes${EN_LIGNE ? ', ainsi que les cookies de sécurité de Stripe au moment du paiement' : ''}. Ces éléments sont exemptés de consentement : aucun bandeau ne vous est donc demandé. Les polices de caractères sont fournies par Google Fonts, qui reçoit à cette occasion votre adresse IP.</p>
+  <h2>Vos droits</h2><p>Vous pouvez demander l’accès, la rectification ou la suppression de vos données, ou vous opposer à leur traitement, en écrivant à ${E.email}. Si la réponse ne vous satisfait pas, vous pouvez saisir la CNIL (cnil.fr).</p>
 </div></section>`,
 });
 

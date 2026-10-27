@@ -314,12 +314,12 @@
           '<label><input type="radio" name="moyen" value="especes"' + (i.moyen === 'especes' ? ' checked' : '') + '><span>En espèces</span></label>' +
           '<label><input type="radio" name="moyen" value="carte"' + (i.moyen === 'carte' ? ' checked' : '') + '><span>Par carte bancaire</span></label></div>' +
           '<p>' + (i.mode === 'livraison' ? 'Au livreur, à la livraison.' : 'Au comptoir, quand vous récupérez votre commande.') + ' La commande part en cuisine dès que vous la validez.</p></div><p class="alerte" data-alerte-paiement hidden></p>');
-        pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-especes>' + ICO.sac + ' Valider ma commande</button>';
+        pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-especes>' + ICO.sac + ' Valider ma commande</button>' + cgvOk();
         return;
       }
       corps.insertAdjacentHTML('beforeend', '<div class="paiement-stripe" data-ps><p class="ps-attente">Préparation du paiement sécurisé…</p></div><p class="alerte" data-alerte-paiement hidden></p>');
       pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-payer disabled>' + ICO.cadenas + ' Payer ' + euros(total) + '</button>' +
-        '<p class="securite">' + ICO.cadenas + ' Paiement sécurisé par Stripe · CB, Visa, Mastercard, Apple Pay, Google Pay</p>';
+        '<p class="securite">' + ICO.cadenas + ' Paiement sécurisé par Stripe · CB, Visa, Mastercard, Apple Pay, Google Pay</p>' + cgvOk();
       preparerPaiement();
       return;
     }
@@ -327,6 +327,9 @@
     pied.innerHTML = totaux() + '<button type="button" class="bouton bouton-or" data-payer>' + (CFG.paiement === 'sur_place' ? ICO.sac : ICO.cadenas) + ' ' + libelle + '</button>' +
       (CFG.paiement === 'sur_place' ? '<p class="securite">Réglé à la livraison ou au retrait.</p>' : '<p class="securite">' + ICO.cadenas + ' Paiement sécurisé par Stripe · Visa, Mastercard, CB, Apple Pay</p>');
   }
+
+  // Avant de payer ou de valider : les conditions de vente, a un clic.
+  function cgvOk() { return '<p class="securite">En validant, vous acceptez nos <a href="' + (CFG.racine || '/') + 'cgv/" target="_blank" rel="noopener">conditions de vente</a>.</p>'; }
 
   /* L'apercu : rien ne part. On montre ce qui se passera. */
   function rendreApercu() {
