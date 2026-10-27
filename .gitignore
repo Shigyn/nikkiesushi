@@ -3,3 +3,5 @@ node_modules/
 # Notes internes LocWeb (tarifs, commission) : jamais sur le depot public.
 PLAN.md
 CODE-ESPACE-PRO.md
+
+STRIPE-PK-LIVE.txt
