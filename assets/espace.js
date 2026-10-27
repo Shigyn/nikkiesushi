@@ -656,7 +656,14 @@
     var liv = l.filter(function (c) { return c.mode === 'livraison'; }).length;
     var carte = somme(l, parCarte);
     $('[data-mode-test]').hidden = !ventes.test;
+    var cs = ventes.compte;
+    var etatCompte = !cs ? ['Pas encore ouvert', 'Ouvrez votre compte Stripe pour recevoir les paiements par carte du site sur votre compte bancaire.', 'Ouvrir mon compte de paiement']
+      : cs.erreur ? ['Compte introuvable', 'Prévenez Nicolas (LocWeb).', '']
+      : cs.encaisse && cs.vire && !(cs.manque || []).length ? ['✓ Actif', 'Les paiements par carte arrivent sur votre compte bancaire.', '']
+      : ['À compléter', 'Stripe attend encore des informations' + (cs.encaisse ? '' : ' avant d’ouvrir les paiements') + '.', 'Compléter mon compte'];
     $('[data-kpi]').innerHTML =
+      '<div class="ns-compta ns-compta-stripe"><small>Recevoir les paiements en ligne</small><b>' + etatCompte[0] + '</b><span>' + etatCompte[1] + '</span>' +
+        (etatCompte[2] ? '<button type="button" class="cu-bouton cu-feu" data-stripe-lien>' + etatCompte[2] + '</button>' : '') + '</div>' +
       '<div class="ns-compta ns-compta-carte"><small>Payé par carte sur le site</small><b>' + euros(carte) + '</b><span>' + l.length + ' commande(s), versé par Stripe sur le compte</span></div>' +
       '<div class="ns-compta ns-compta-caisse"><small>Réglées sur place</small><b>' + surPlace + '</b><span>commande(s) sur la période, à saisir sur votre caisse</span></div>' +
       [['Chiffre d’affaires', euros(ca)], ['Commandes', l.length], ['Panier moyen', l.length ? euros(Math.round(ca / l.length)) : '—'],
@@ -727,6 +734,12 @@
     if (t.closest('[data-fermetures]')) { panneauFermetures(); return; }
     var fs = t.closest('[data-ferm-suppr]');
     if (fs) { var l = (donnees.snack.fermetures || []).slice(); l.splice(+fs.getAttribute('data-ferm-suppr'), 1); enregistrerFermetures(l); return; }
+    var sl = t.closest('[data-stripe-lien]');
+    if (sl) {
+      sl.disabled = true; sl.textContent = 'Ouverture de Stripe…';
+      appel('stripe_lien').then(function (j) { location.href = j.lien; }).catch(function (x) { sl.disabled = false; sl.textContent = 'Réessayer'; alert(x.message); });
+      return;
+    }
     var rb = t.closest('[data-rembourser]');
     if (rb) {
       var reste = +rb.getAttribute('data-reste');
