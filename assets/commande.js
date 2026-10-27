@@ -301,9 +301,10 @@
       '<div class="recap"><small>Vos coordonnées</small><span>' + esc(i.nom) + ' · ' + esc(i.tel) + '</span>' + (i.commentaire ? '<span>« ' + esc(i.commentaire) + ' »</span>' : '') + '</div>' +
       '<div class="recap"><small>' + nbArticles() + ' article' + (nbArticles() > 1 ? 's' : '') + '</small><div class="recap-lignes">' +
       etat.panier.map(function (l) { var p = CARTE[l.id]; return '<div><span>' + l.qte + ' × ' + esc(p.n) + (l.choix ? ' (' + esc(l.choix) + ')' : '') + '</span><span>' + euros(p.p * l.qte) + '</span></div>'; }).join('') + '</div></div>';
-    if (CFG.paiement === 'stripe') {
-      var especes = i.reglement === 'especes';
-      corps.insertAdjacentHTML('beforeend', '<div class="reglements" role="radiogroup" aria-label="Paiement">' +
+    // 'sur_place' (mise en ligne du 27/10, avant le compte Stripe) : meme ecran, sans « Payer en ligne ».
+    if (CFG.paiement === 'stripe' || CFG.paiement === 'sur_place') {
+      var especes = CFG.paiement === 'sur_place' || i.reglement === 'especes';
+      if (CFG.paiement === 'stripe') corps.insertAdjacentHTML('beforeend', '<div class="reglements" role="radiogroup" aria-label="Paiement">' +
         '<button type="button" class="reglement' + (especes ? '' : ' actif') + '" data-reglement="ligne" role="radio" aria-checked="' + !especes + '"><b>Payer en ligne</b><small>Carte, Apple Pay, Google Pay</small></button>' +
         '<button type="button" class="reglement' + (especes ? ' actif' : '') + '" data-reglement="especes" role="radio" aria-checked="' + especes + '"><b>Payer sur place</b><small>' + (i.mode === 'livraison' ? 'À la livraison' : 'Au comptoir, en récupérant la commande') + '</small></button></div>');
       if (especes) {

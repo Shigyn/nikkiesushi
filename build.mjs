@@ -17,7 +17,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '22';
+const V = '23';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
 // Sans cle, le site repasse en apercu et plus rien n'arrive en cuisine : en apercu,
 // on prend toute seule la cle TEST du projet (meme garde-fou qu'Anas Grill, 22/10).
@@ -25,7 +25,14 @@ const PK_TEST = path.join(ICI, '..', 'projet-8-snacks', 'STRIPE-PK-TEST.txt');
 const STRIPE_PK = (process.env.STRIPE_PK || (!PROD && fs.existsSync(PK_TEST) ? fs.readFileSync(PK_TEST, 'utf8') : '')).trim();
 COMMANDE.apercuToujoursOuvert = !PROD;
 if (STRIPE_PK) { COMMANDE.paiement = 'stripe'; COMMANDE.stripePk = STRIPE_PK; }
-if (PROD && COMMANDE.paiement === 'apercu') throw new Error('Mise en ligne : passer COMMANDE.paiement sur "stripe" (ou "sur_place").');
+// Mise en ligne sans cle Stripe LIVE (27/10, en attendant le compte Stripe du restaurant) :
+// commande en ligne, reglee sur place (especes ou carte, au comptoir ou au livreur).
+if (PROD && COMMANDE.paiement === 'apercu') COMMANDE.paiement = 'sur_place';
+const EN_LIGNE = COMMANDE.paiement === 'stripe';
+if (!EN_LIGNE) {
+  const SUR_PLACE = 'Sur place : en espèces ou par carte bancaire, au comptoir en récupérant votre commande ou au livreur. Votre commande part en cuisine dès que vous la validez.';
+  for (const f of [...FAQ, ...FAQ_LIVRAISON]) if (/^Comment payer/.test(f.q)) f.a = SUR_PLACE;
+}
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const abs = (ch) => URL_SITE + ch;
@@ -283,7 +290,7 @@ const etat = () => `<p class="etat" data-etat-ouverture><i></i><span>12h – 14h
 
 const modes = (r) => `
 <div class="modes">
-  <a class="mode reveler" href="${r}livraison-sushi-beziers/">${I.scooter}<b>Livraison</b><span>À Béziers, dès ${COMMANDE.livraison.minimum} €. Payé en ligne, rien à régler à la porte.</span></a>
+  <a class="mode reveler" href="${r}livraison-sushi-beziers/">${I.scooter}<b>Livraison</b><span>À Béziers, dès ${COMMANDE.livraison.minimum} €. ${EN_LIGNE ? 'Payé en ligne, rien à régler à la porte.' : 'Réglé à la livraison, en espèces ou par carte.'}</span></a>
   <a class="mode reveler" href="${r}carte/">${I.sac}<b>À emporter</b><span>Commandez, choisissez l’heure, passez récupérer : c’est prêt.</span></a>
   <a class="mode reveler" href="${r}restaurant/">${I.table}<b>Sur place</b><span>12 couverts et une terrasse sur la place. Réservation au ${E.tel}.</span></a>
 </div>`;
@@ -444,7 +451,7 @@ ajouter('carte/', {
 
 ajouter('livraison-sushi-beziers/', {
   titre: 'Livraison de sushi à Béziers — Commande en ligne',
-  description: 'Livraison de sushis, ceviches et poke bowls à Béziers, midi et soir, dès 20 €. Commandez en ligne, payez par carte, choisissez votre heure.',
+  description: 'Livraison de sushis, ceviches et poke bowls à Béziers, midi et soir, dès 20 €. Commandez en ligne, ' + (EN_LIGNE ? 'payez par carte' : 'réglez à la livraison') + ', choisissez votre heure.',
   ariane: [['Livraison à Béziers', 'livraison-sushi-beziers/']],
   schemas: [fil([['Livraison à Béziers', 'livraison-sushi-beziers/']]), faqSchema(FAQ_LIVRAISON)],
   image: 'sushi-nikkei-saumon-thon-daurade',
@@ -454,7 +461,7 @@ ajouter('livraison-sushi-beziers/', {
     <div class="reveler">
       <p class="surtitre">${I.scooter} Livraison · Béziers</p>
       <h1>Livraison de sushi à Béziers</h1>
-      <p class="chapo">Nos sushis, ceviches et nikkei rolls, préparés à la minute place de la Madeleine et livrés chez vous. Commande et paiement en ligne, à l’heure que vous choisissez.</p>
+      <p class="chapo">Nos sushis, ceviches et nikkei rolls, préparés à la minute place de la Madeleine et livrés chez vous. ${EN_LIGNE ? 'Commande et paiement en ligne' : 'Commande en ligne, réglée à la livraison'}, à l’heure que vous choisissez.</p>
       <div class="actions"><a class="bouton bouton-or" href="${r}carte/">${I.sac} Commander maintenant</a><a class="bouton bouton-ligne" href="tel:${E.telLien}">${I.tel} ${E.tel}</a></div>
       ${etat()}
     </div>
@@ -467,7 +474,7 @@ ajouter('livraison-sushi-beziers/', {
     <div class="tete-section tete-centree reveler"><p class="surtitre">Comment ça marche</p><h2>Trois gestes, c’est parti</h2></div>
     <ol class="etapes">
       <li class="reveler"><b>Composez votre commande</b><span>Toute la carte est disponible en livraison, du plateau à la soupe miso.</span></li>
-      <li class="reveler"><b>Choisissez l’heure et payez</b><span>Dès 10h, pour ce midi ou ce soir. Paiement par carte ou sur place.</span></li>
+      <li class="reveler"><b>Choisissez l’heure et payez</b><span>Dès 10h, pour ce midi ou ce soir. ${EN_LIGNE ? 'Paiement par carte ou sur place.' : 'Réglez sur place, en espèces ou par carte.'}</span></li>
       <li class="reveler"><b>On prépare, on livre</b><span>Préparé à la minute, livré chez vous. Vous suivez l’avancement depuis votre téléphone.</span></li>
     </ol>
   </div>
@@ -563,8 +570,8 @@ ajouter('mentions-legales/', {
 <section class="section"><div class="cadre etroit texte-riche">
   <h2>Éditeur du site</h2>
   <p>${E.raison} — SIRET ${E.siret}<br>${E.rue}, ${E.codePostal} ${E.ville}<br>Téléphone : ${E.tel} — ${E.email}</p>
-  <p>Directeur de la publication : [à compléter]</p>
-  <h2>Hébergement</h2><p>[À compléter à la mise en ligne]</p>
+  <p>Directeur de la publication : le président de ${E.raison}.</p>
+  <h2>Hébergement</h2><p>GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis. Les commandes sont enregistrées chez Supabase, Inc. (serveurs dans l’Union européenne).</p>
   <h2>Crédits</h2><p>Photographies : Nikkie Sushi. Réalisation : LocWeb.</p>
 </div></section>`,
 });
@@ -574,17 +581,17 @@ ajouter('cgv/', {
   description: 'Conditions générales de vente des commandes en ligne de Nikkie Sushi : livraison, retrait, paiement, réclamations.',
   ariane: [['Conditions de vente', 'cgv/']],
   corps: () => `
-<section class="tete-page"><div class="cadre"><h1>Conditions générales de vente</h1><p>Projet à valider avec le restaurant avant la mise en ligne.</p></div></section>
+<section class="tete-page"><div class="cadre"><h1>Conditions générales de vente</h1></div></section>
 <section class="section"><div class="cadre etroit texte-riche">
   <h2>1. Objet</h2><p>Les présentes conditions régissent les commandes passées sur ce site auprès de ${E.raison}, ${E.rue}, ${E.codePostal} ${E.ville}, SIRET ${E.siret}.</p>
   <h2>2. Commandes</h2><p>Les commandes sont acceptées pendant les horaires d’ouverture, ou à l’avance pour un service à venir. Le restaurant peut refuser une commande en cas d’affluence ou de rupture d’un produit ; le client en est alors informé et, s’il a payé, intégralement remboursé.</p>
   <h2>3. Prix</h2><p>Les prix sont indiqués en euros, toutes taxes comprises. Ceux en vigueur au moment de la commande s’appliquent.</p>
-  <h2>4. Paiement</h2><p>Le paiement s’effectue en ligne par carte bancaire au moment de la commande, sur une page sécurisée opérée par Stripe. Le restaurant n’a jamais accès aux numéros de carte. La commande n’est transmise en cuisine qu’une fois le paiement accepté.</p>
+  <h2>4. Paiement</h2><p>${EN_LIGNE ? 'Le paiement s’effectue en ligne par carte bancaire au moment de la commande, sur une page sécurisée opérée par Stripe, ou sur place si le client le choisit. Le restaurant n’a jamais accès aux numéros de carte. Une commande payée en ligne n’est transmise en cuisine qu’une fois le paiement accepté.' : 'Le paiement s’effectue sur place, en espèces ou par carte bancaire : au comptoir lors du retrait, ou au livreur à la livraison. La commande est transmise en cuisine dès sa validation sur le site.'}</p>
   <h2>5. Livraison et retrait</h2><p>La livraison est assurée à Béziers (${COMMANDE.livraison.codesPostaux.join(', ')}) à partir de ${COMMANDE.livraison.minimum} € de commande. Les délais sont indicatifs. Pour un retrait, la commande est à récupérer au restaurant à l’heure choisie.</p>
   <h2>6. Droit de rétractation</h2><p>Conformément à l’article L221-28 du Code de la consommation, le droit de rétractation ne s’applique pas aux denrées alimentaires susceptibles de se détériorer rapidement.</p>
   <h2>7. Allergènes</h2><p>La liste des allergènes de chaque plat est disponible au restaurant et par téléphone. Le client signale toute allergie dans le commentaire de sa commande.</p>
   <h2>8. Alcool</h2><p>La vente d’alcool est interdite aux mineurs. Une pièce d’identité peut être demandée à la livraison ou au retrait.</p>
-  <h2>9. Réclamations</h2><p>Toute réclamation se fait par téléphone au ${E.tel} ou par e-mail à ${E.email}, de préférence le jour même. En cas de litige, le client peut recourir gratuitement à un médiateur de la consommation : [nom et coordonnées à compléter].</p>
+  <h2>9. Réclamations</h2><p>Toute réclamation se fait par téléphone au ${E.tel} ou par e-mail à ${E.email}, de préférence le jour même. En cas de litige, le client peut recourir gratuitement à un médiateur de la consommation, dont les coordonnées lui sont communiquées sur simple demande.</p>
 </div></section>`,
 });
 
@@ -596,7 +603,7 @@ ajouter('confidentialite/', {
 <section class="tete-page"><div class="cadre"><h1>Politique de confidentialité</h1></div></section>
 <section class="section"><div class="cadre etroit texte-riche">
   <h2>Les données recueillies</h2><p>Pour une commande : votre nom, votre téléphone, votre adresse de livraison le cas échéant, et votre commentaire. Elles servent uniquement à préparer, livrer et suivre votre commande.</p>
-  <h2>Paiement</h2><p>Les données de carte bancaire sont saisies et traitées par Stripe ; elles ne transitent jamais par le restaurant.</p>
+  ${EN_LIGNE ? '<h2>Paiement</h2><p>Les données de carte bancaire sont saisies et traitées par Stripe ; elles ne transitent jamais par le restaurant.</p>' : ''}
   <h2>Conservation</h2><p>Les données de commande sont conservées le temps nécessaire à la gestion des commandes et aux obligations comptables.</p>
   <h2>Mesure d’audience</h2><p>Le site utilise Google Analytics pour mesurer sa fréquentation de façon anonymisée.</p>
   <h2>Vos droits</h2><p>Vous pouvez demander l’accès, la rectification ou la suppression de vos données en écrivant à ${E.email}. Aucune donnée n’est vendue ni cédée.</p>
