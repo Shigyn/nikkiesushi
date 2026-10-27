@@ -651,7 +651,6 @@
   // Rien n'est efface : elles restent en base et dans l'historique des commandes.
   function afficherVentes() {
     var tout = ventes.commandes.filter(function (c) { return c.paiement !== 'sur_place'; }), l = tout;
-    var surPlace = ventes.commandes.filter(function (c) { return c.paiement === 'sur_place' && c.statut !== 'annulee'; }).length;
     var ca = l.reduce(function (t, c) { return t + net(c); }, 0);
     var liv = l.filter(function (c) { return c.mode === 'livraison'; }).length;
     var carte = somme(l, parCarte);
@@ -665,7 +664,6 @@
       '<div class="ns-compta ns-compta-stripe"><small>Recevoir les paiements en ligne</small><b>' + etatCompte[0] + '</b><span>' + etatCompte[1] + '</span>' +
         (etatCompte[2] ? '<button type="button" class="cu-bouton cu-feu" data-stripe-lien>' + etatCompte[2] + '</button>' : '') + '</div>' +
       '<div class="ns-compta ns-compta-carte"><small>Payé par carte sur le site</small><b>' + euros(carte) + '</b><span>' + l.length + ' commande(s), versé par Stripe sur le compte</span></div>' +
-      '<div class="ns-compta ns-compta-caisse"><small>Réglées sur place</small><b>' + surPlace + '</b><span>commande(s) sur la période, à saisir sur votre caisse</span></div>' +
       [['Chiffre d’affaires', euros(ca)], ['Commandes', l.length], ['Panier moyen', l.length ? euros(Math.round(ca / l.length)) : '—'],
       ['Livraisons', liv + ' / ' + l.length], ['Remboursé', euros(l.reduce(function (t, c) { return t + c.rembourse_cents; }, 0))]]
       .map(function (k) { return '<div><small>' + k[0] + '</small><b>' + k[1] + '</b></div>'; }).join('');
