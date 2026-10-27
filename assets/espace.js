@@ -644,21 +644,21 @@
   }
   var net = function (c) { return c.total_cents - c.rembourse_cents; };
   var parCarte = function (c) { return c.paiement !== 'sur_place' ? net(c) : 0; };
-  var aLaCaisse = function (c) { return c.paiement === 'sur_place' && c.statut === 'remise' ? c.total_cents : 0; };
-  var aEncaisser = function (c) { return c.paiement === 'sur_place' && (c.statut === 'recue' || c.statut === 'prete') ? c.total_cents : 0; };
   var somme = function (l, f) { return l.reduce(function (t, c) { return t + f(c); }, 0); };
-  var MOYEN = { especes: 'espèces', carte: 'carte bancaire' };
+  // Rokib, 27/10 : les commandes reglees sur place sont saisies sur la caisse du
+  // restaurant, qui fait foi pour la compta. Ventes et export ne montrent donc
+  // que les paiements en ligne ; un rappel compte les commandes sur place a saisir.
+  // Rien n'est efface : elles restent en base et dans l'historique des commandes.
   function afficherVentes() {
-    var tout = ventes.commandes, l = tout.filter(function (c) { return !(c.paiement === 'sur_place' && c.statut === 'annulee'); });
+    var tout = ventes.commandes.filter(function (c) { return c.paiement !== 'sur_place'; }), l = tout;
+    var surPlace = ventes.commandes.filter(function (c) { return c.paiement === 'sur_place' && c.statut !== 'annulee'; }).length;
     var ca = l.reduce(function (t, c) { return t + net(c); }, 0);
     var liv = l.filter(function (c) { return c.mode === 'livraison'; }).length;
-    var carte = somme(l, parCarte), caisse = somme(l, aLaCaisse), reste = somme(l, aEncaisser);
-    var caisseEsp = somme(l, function (c) { return c.moyen_sur_place === 'especes' ? aLaCaisse(c) : 0; });
-    var caisseCb = somme(l, function (c) { return c.moyen_sur_place === 'carte' ? aLaCaisse(c) : 0; });
+    var carte = somme(l, parCarte);
     $('[data-mode-test]').hidden = !ventes.test;
     $('[data-kpi]').innerHTML =
-      '<div class="ns-compta ns-compta-carte"><small>Payé par carte sur le site</small><b>' + euros(carte) + '</b><span>' + l.filter(function (c) { return c.paiement !== 'sur_place'; }).length + ' commande(s), versé par Stripe sur le compte</span></div>' +
-      '<div class="ns-compta ns-compta-caisse"><small>Encaissé sur place, à la caisse</small><b>' + euros(caisse) + '</b><span>' + l.filter(function (c) { return aLaCaisse(c); }).length + ' commande(s) remise(s) au client' + (caisseEsp || caisseCb ? ' · dont ' + euros(caisseEsp) + ' en espèces et ' + euros(caisseCb) + ' par carte' : '') + (reste ? ' · encore ' + euros(reste) + ' à encaisser' : '') + '</span></div>' +
+      '<div class="ns-compta ns-compta-carte"><small>Payé par carte sur le site</small><b>' + euros(carte) + '</b><span>' + l.length + ' commande(s), versé par Stripe sur le compte</span></div>' +
+      '<div class="ns-compta ns-compta-caisse"><small>Réglées sur place</small><b>' + surPlace + '</b><span>commande(s) sur la période, à saisir sur votre caisse</span></div>' +
       [['Chiffre d’affaires', euros(ca)], ['Commandes', l.length], ['Panier moyen', l.length ? euros(Math.round(ca / l.length)) : '—'],
       ['Livraisons', liv + ' / ' + l.length], ['Remboursé', euros(l.reduce(function (t, c) { return t + c.rembourse_cents; }, 0))]]
       .map(function (k) { return '<div><small>' + k[0] + '</small><b>' + k[1] + '</b></div>'; }).join('');
@@ -668,9 +668,9 @@
         return '<tr><td>' + c.jour.slice(8, 10) + '/' + c.jour.slice(5, 7) + ' ' + hm(c.payee_le || c.cree_le) + '</td><td>' + c.numero + '</td><td>' + esc(c.nom) + '<br><small>' + esc(c.telephone) + '</small></td>' +
           '<td>' + (c.mode === 'livraison' ? 'Livraison' : 'À emporter') + '</td>' +
           '<td><small>' + c.lignes.map(function (x) { return x.qte + ' × ' + esc(x.n) + (x.resume ? ' (' + esc(x.resume) + ')' : ''); }).join(', ') + '</small></td>' +
-          '<td>' + euros(c.total_cents) + (c.paiement === 'sur_place' ? '<br><small class="ns-p-caisse">caisse' + (MOYEN[c.moyen_sur_place] ? ' · ' + MOYEN[c.moyen_sur_place] : '') + (aEncaisser(c) ? ' · à encaisser' : '') + '</small>' : '<br><small class="ns-p-carte">carte</small>') + (c.rembourse_cents ? '<br><small>remb. ' + euros(c.rembourse_cents) + '</small>' : '') + '</td><td>' + esc(etatDe(c)) + '</td>' +
+          '<td>' + euros(c.total_cents) + '<br><small class="ns-p-carte">carte</small>' + (c.rembourse_cents ? '<br><small>remb. ' + euros(c.rembourse_cents) + '</small>' : '') + '</td><td>' + esc(etatDe(c)) + '</td>' +
           '<td>' + (reste > 0 && c.paiement !== 'sur_place' ? '<button type="button" class="cu-bouton cu-discret" data-rembourser="' + c.id + '" data-reste="' + reste + '">Rembourser</button>' : '') + '</td></tr>';
-      }).join('') || '<tr><td colspan="8">Aucune commande sur cette période.</td></tr>') + '</tbody>';
+      }).join('') || '<tr><td colspan="8">Aucun paiement en ligne sur cette période.</td></tr>') + '</tbody>';
     if (periode && periode.nom === 'jour') sousCarte('ventes', euros(ca) + ' aujourd’hui');
   }
   // L'export : on choisit les colonnes, puis on telecharge (jamais les frais de paiement en ligne).
@@ -678,15 +678,14 @@
     ['Jour', function (c) { return c.jour; }], ['Heure', function (c) { return hm(c.payee_le || c.cree_le); }], ['N°', function (c) { return c.numero; }],
     ['Client', function (c) { return c.nom; }], ['Téléphone', function (c) { return c.telephone; }],
     ['Mode', function (c) { return c.mode === 'livraison' ? 'Livraison' : 'À emporter'; }],
-    ['Paiement', function (c) { return c.paiement === 'sur_place' ? 'Sur place (' + (MOYEN[c.moyen_sur_place] || 'caisse') + ')' : 'Carte (site)'; }], ['Adresse', function (c) { return c.adresse || ''; }],
+    ['Paiement', function () { return 'Carte (site)'; }], ['Adresse', function (c) { return c.adresse || ''; }],
     ['Contenu', function (c) { return c.lignes.map(function (x) { return x.qte + ' x ' + x.n + (x.resume ? ' (' + x.resume + ')' : ''); }).join(' | '); }],
     ['Total TTC', function (c) { return (c.total_cents / 100).toFixed(2).replace('.', ','); }], ['Remboursé', function (c) { return (c.rembourse_cents / 100).toFixed(2).replace('.', ','); }],
     ['Net', function (c) { return ((c.total_cents - c.rembourse_cents) / 100).toFixed(2).replace('.', ','); }],
-    ['Payé par carte', function (c) { return (parCarte(c) / 100).toFixed(2).replace('.', ','); }],
-    ['Encaissé à la caisse', function (c) { return (aLaCaisse(c) / 100).toFixed(2).replace('.', ','); }], ['État', etatDe]
+    ['Payé par carte', function (c) { return (parCarte(c) / 100).toFixed(2).replace('.', ','); }], ['État', etatDe]
   ];
   // Les colonnes de montant ont leur total en bas du fichier (pour la compta).
-  var A_TOTALISER = { 'Total TTC': function (c) { return c.total_cents; }, 'Remboursé': function (c) { return c.rembourse_cents; }, 'Net': net, 'Payé par carte': parCarte, 'Encaissé à la caisse': aLaCaisse };
+  var A_TOTALISER = { 'Total TTC': function (c) { return c.total_cents; }, 'Remboursé': function (c) { return c.rembourse_cents; }, 'Net': net, 'Payé par carte': parCarte };
   function panneauExport() {
     var gardees = lire('ns-export-colonnes', null);
     panneau('<h2>Export Excel</h2><p>Période choisie dans Ventes. Coche ce que tu veux dans le fichier :</p><div class="cu-plats" data-ex-cols>' +
@@ -695,7 +694,7 @@
   }
   function exporter(cols) {
     var choisies = COLONNES.filter(function (k) { return cols.indexOf(k[0]) >= 0; });
-    var cmds = ventes.commandes.filter(function (c) { return !(c.paiement === 'sur_place' && c.statut === 'annulee'); });
+    var cmds = ventes.commandes.filter(function (c) { return c.paiement !== 'sur_place'; });
     var lignes = [choisies.map(function (k) { return k[0]; })].concat(cmds.map(function (c) { return choisies.map(function (k) { return k[1](c); }); }));
     if (choisies.some(function (k) { return A_TOTALISER[k[0]]; }))
       lignes.push(choisies.map(function (k, n) { return A_TOTALISER[k[0]] ? (somme(cmds, A_TOTALISER[k[0]]) / 100).toFixed(2).replace('.', ',') : n === 0 ? 'TOTAL' : ''; }));
