@@ -83,7 +83,8 @@
           carteMenu('data-appliquer hidden', 'maj', 'Mise à jour prête') +
         '</nav></aside>' +
       '<main class="cu-zone">' +
-        '<div class="cu-haut"><button type="button" class="cu-pause" data-pause><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONES.pause + '</svg><span data-pause-txt>Pause</span></button></div>' +
+        '<div class="cu-haut"><button type="button" class="cu-pause" data-actualiser title="Recharger l’écran"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONES.maj + '</svg><span>Actualiser</span></button>' +
+          '<button type="button" class="cu-pause" data-pause><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONES.pause + '</svg><span data-pause-txt>Pause</span></button></div>' +
         '<p class="cu-alerte" data-alerte hidden></p>' +
         '<div class="cu-colonnes" data-ecran="commandes">' +
           '<section><h2>À préparer <span data-n-recue></span></h2><div data-col="recue"></div></section>' +
@@ -199,6 +200,8 @@
       if (premiere) { ecouter(); setTimeout(majAuLancement, 3000); }
       var nouvelles = j.commandes.filter(function (c) { return !avant[c.id] && c.statut === 'recue'; });
       if (nouvelles.length && !premiere) { sonner(); if (vue !== 'commandes') montrer('commandes'); }
+      // « Renvoyer le ticket » depuis un autre ecran : le serveur l'a remis a imprimer.
+      j.commandes.forEach(function (c) { if (!c.imprimee_le && imprimees[c.id] === 'ok') imprimees[c.id] = false; });
       afficher();
       imprimerEnAttente();
     }).catch(function (e) { horsLigne = true; majEtat(e.message); });
@@ -213,7 +216,9 @@
     var a = $('[data-alerte]');
     var nonImp = IMPRESSION ? donnees.commandes.filter(function (c) { return !c.imprimee_le && c.statut === 'recue'; }).length : 0;
     var t = horsLigne ? 'Connexion perdue : les commandes arrivent quand même, elles s’afficheront au retour du réseau.' + (msg ? ' (' + msg + ')' : '')
-      : nonImp ? (alerteImp || nonImp + ' ticket' + (nonImp > 1 ? 's' : '') + ' non imprimé' + (nonImp > 1 ? 's' : '') + ' : vérifie l’imprimante (papier, câble), puis « Réimprimer ».') : '';
+      : nonImp ? (alerteImp || nonImp + ' ticket' + (nonImp > 1 ? 's' : '') + ' non imprimé' + (nonImp > 1 ? 's' : '') + ' : ' + (principale()
+        ? 'vérifie l’imprimante (papier, câble), puis « Réimprimer ».'
+        : 'l’appli de l’appareil qui imprime (le téléphone) est peut-être fermée. Ouvre-la : les tickets sortiront tout seuls.')) : '';
     a.hidden = !t; a.textContent = t;
   }
 
@@ -232,10 +237,14 @@
     var rb = c.paiement === 'remboursee' ? '<span class="cu-badge cu-rouge">Remboursée</span>' : c.paiement === 'remboursee_partiel' ? '<span class="cu-badge cu-jaune">Remb. ' + euros(c.rembourse_cents) + '</span>' : '';
     // Sur place ou deja paye : se voit d'un coup d'oeil, en couleur, en haut de la commande.
     var reglement = c.paiement === 'sur_place'
-      ? '<p class="cu-reglement cu-reglement-sp"><b>À ENCAISSER SUR PLACE</b><span>' + euros(c.total_cents) + '</span></p>'
+      ? '<p class="cu-reglement cu-reglement-sp"><b>' + (c.statut === 'remise' ? 'ENCAISSÉ' : 'À ENCAISSER') + ({ especes: ' · ESPÈCES', carte: ' · CARTE BANCAIRE' }[c.moyen_sur_place] || ' SUR PLACE') + '</b><span>' + euros(c.total_cents) + '</span></p>'
       : '<p class="cu-reglement cu-reglement-ok"><b>✓ PAYÉE EN LIGNE</b><span>rien à encaisser</span></p>';
+    // Le ticket est-il sorti ? (Rokib, 27/10 : le telephone qui imprime peut avoir l'appli fermee.)
+    var ticket = !IMPRESSION || (c.statut !== 'recue' && c.statut !== 'prete') ? ''
+      : c.imprimee_le ? '<span class="cu-badge cu-vert">✓ Ticket imprimé</span>'
+      : c.statut === 'recue' ? '<span class="cu-badge cu-rouge">✗ Ticket pas imprimé</span>' : '';
     return '<article class="cu-cmd' + (c.paiement === 'sur_place' ? ' cu-cmd-sp' : ' cu-cmd-ok') + (c.imprimee_le || !IMPRESSION ? '' : ' cu-non-imp') + '" data-id="' + c.id + '">' + reglement +
-      '<div class="cu-cmd-tete"><b class="cu-num">N° ' + c.numero + '</b><span class="cu-heure">' + (c.creneau ? 'Programmée · ' : '') + (c.mode === 'livraison' ? 'À livrer à <b>' : 'À remettre à <b>') + hm(c.heure_prevue) + '</b></span>' + rb + '</div>' +
+      '<div class="cu-cmd-tete"><b class="cu-num">N° ' + c.numero + '</b>' + ticket + '<span class="cu-heure">' + (c.creneau ? 'Programmée · ' : '') + (c.mode === 'livraison' ? 'À livrer à <b>' : 'À remettre à <b>') + hm(c.heure_prevue) + '</b></span>' + rb + '</div>' +
       '<p class="cu-client">' + esc(c.nom) + ' · <a href="tel:' + esc(c.telephone) + '">' + esc(c.telephone) + '</a></p>' +
       (c.mode === 'livraison' ? '<p class="cu-mode cu-livraison"><b>Livraison</b> · ' + esc(c.adresse || '') + '</p>' : '<p class="cu-mode"><b>À emporter</b></p>') +
       '<ul class="cu-lignes">' + c.lignes.map(function (l) { return '<li><b>' + l.qte + ' × ' + esc(l.n) + '</b>' + (l.resume ? '<span>' + esc(l.resume) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
@@ -245,7 +254,8 @@
         (c.statut === 'prete' ? '<button type="button" class="cu-bouton cu-feu" data-statut="remise">' + (c.mode === 'livraison' ? 'Partie en livraison' : 'Remise au client') + '</button><button type="button" class="cu-bouton cu-discret" data-statut="recue">Pas prête</button>' : '') +
         (c.statut === 'remise' ? '<button type="button" class="cu-bouton cu-discret" data-statut="prete">Pas encore remise</button>' : '') +
         (c.statut !== 'remise' ? '<button type="button" class="cu-bouton cu-discret cu-annuler" data-annuler>Annuler</button>' : '') +
-        (IMPRESSION ? '<button type="button" class="cu-bouton cu-discret" data-reimprimer>' + (c.imprimee_le ? 'Réimprimer' : 'Imprimer') + '</button>' : '') +
+        (!IMPRESSION ? '' : principale() ? '<button type="button" class="cu-bouton cu-discret" data-reimprimer>' + (c.imprimee_le ? 'Réimprimer' : 'Imprimer') + '</button>'
+          : c.statut === 'recue' ? '<button type="button" class="cu-bouton cu-discret" data-reimprimer>Renvoyer le ticket</button>' : '') +
         '<span class="cu-total">' + euros(c.total_cents) + '</span></div></article>';
   }
 
@@ -266,7 +276,9 @@
       var fait = reglage.impression === 'appli' ? viaAppli(c) : viaNavigateur(c);
       if (fait === true) {
         c.imprimee_le = new Date().toISOString();
-        if (force) appel('imprimee', { id: c.id }).catch(function () {});
+        // Le ticket est sorti : les autres ecrans (la tablette) passent au vert.
+        var sorti = function () { imprimees[c.id] = 'ok'; };
+        appel('imprimee', { id: c.id }).then(sorti, sorti);
         if (!donnees.commandes.some(function (x) { return x.statut === 'recue' && !x.imprimee_le; })) alerteImp = '';
         afficher(); return;
       }
@@ -290,7 +302,8 @@
     });
     t += '-'.repeat(L) + '\n';
     if (c.note) t += ESC + 'E1' + 'NOTE : ' + ESC + 'E0' + couper(c.note, L - 7).join('\n') + '\n';
-    t += sans(c.nom) + ' - ' + sans(c.telephone) + '\n' + (c.paiement === 'sur_place' ? ESC + 'a1' + GS + '!' + '\x11' + 'A PAYER SUR PLACE : ' + sans(euros(c.total_cents)) + '\n' + GS + '!' + '\x00' + ESC + 'a0' : 'PAYE EN LIGNE : ' + sans(euros(c.total_cents))) + '\n\n\n\n' + GS + 'V' + '\x42' + '\x00';
+    t += sans(c.nom) + ' - ' + sans(c.telephone) + '\n' + (c.paiement === 'sur_place' ? ESC + 'a1' + GS + '!' + '\x11' + 'A PAYER SUR PLACE : ' + sans(euros(c.total_cents)) + '\n' + GS + '!' + '\x00' +
+      ({ especes: ESC + 'E1' + 'EN ESPECES\n' + ESC + 'E0', carte: ESC + 'E1' + 'PAR CARTE BANCAIRE\n' + ESC + 'E0' }[c.moyen_sur_place] || '') + ESC + 'a0' : 'PAYE EN LIGNE : ' + sans(euros(c.total_cents))) + '\n\n\n\n' + GS + 'V' + '\x42' + '\x00';
     return t;
   }
   // L'appli Android LocWeb envoie les octets ESC/POS a l'imprimante, port 9100, sans fenetre.
@@ -407,7 +420,7 @@
     d.open(); d.write('<!doctype html><meta charset="utf-8"><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:0 4mm;font:13px/1.35 monospace;color:#000}h1{font-size:30px;margin:6px 0;text-align:center}h2{font-size:17px;margin:0 0 6px;text-align:center}hr{border:0;border-top:1px dashed #000}b{font-size:14px}.r{padding-left:10px}</style>' +
       '<h1>N° ' + c.numero + '</h1><h2>' + (c.mode === 'livraison' ? 'À LIVRER À ' : 'À REMETTRE À ') + hm(c.heure_prevue) + '</h2><div style="text-align:center">' + (c.creneau ? 'Commande programmée<br>' : '') + (c.mode === 'livraison' ? '<b>LIVRAISON</b><br>' + esc(c.adresse || '') : '<b>À EMPORTER</b>') + '</div><hr>' +
       c.lignes.map(function (l) { return '<div><b>' + l.qte + ' × ' + esc(l.n) + '</b>' + (l.resume ? '<div class="r">' + esc(l.resume) + '</div>' : '') + '</div>'; }).join('') + '<hr>' +
-      (c.note ? '<div><b>NOTE :</b> ' + esc(c.note) + '</div>' : '') + '<div>' + esc(c.nom) + ' · ' + esc(c.telephone) + '</div>' + (c.paiement === 'sur_place' ? '<h2>À PAYER : ' + euros(c.total_cents) + '</h2>' : '<div>PAYÉ EN LIGNE : ' + euros(c.total_cents) + '</div>'));
+      (c.note ? '<div><b>NOTE :</b> ' + esc(c.note) + '</div>' : '') + '<div>' + esc(c.nom) + ' · ' + esc(c.telephone) + '</div>' + (c.paiement === 'sur_place' ? '<h2>À PAYER : ' + euros(c.total_cents) + ({ especes: ' · ESPÈCES', carte: ' · CARTE' }[c.moyen_sur_place] || '') + '</h2>' : '<div>PAYÉ EN LIGNE : ' + euros(c.total_cents) + '</div>'));
     d.close();
     setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(function () { f.remove(); }, 5000); }, 250);
     return true;
@@ -446,7 +459,7 @@
      de la cuisine. Elle s'imprime aussi, pour l'afficher au mur. */
   var AIDE = [
     ['Une commande arrive', 'Ça sonne et elle s’affiche dans <b>À préparer</b>. Prépare-la pour l’heure écrite en gros (« À remettre à … »). Quand elle est prête, touche <b>Prête</b>. Quand le client la récupère, vérifie son <b>numéro</b>, puis touche <b>Remise au client</b>.'],
-    IMPRESSION && ['Le ticket ne sort pas', 'La commande devient rouge et un bandeau te prévient. Vérifie le <b>papier</b>, que l’imprimante est <b>allumée</b> et que son <b>câble réseau</b> est branché. Puis touche <b>Réimprimer</b> sur la commande. Pour tester : <b>Réglages → Ticket de test</b>. En attendant, prépare la commande en lisant l’écran : tout y est.'],
+    IMPRESSION && ['Le ticket ne sort pas', 'La commande devient rouge (« Ticket pas imprimé ») et un bandeau te prévient. Si les tickets partent du <b>téléphone</b>, vérifie que l’appli y est <b>ouverte</b>, puis touche <b>Renvoyer le ticket</b> sur la tablette. Sinon, vérifie le <b>papier</b>, que l’imprimante est <b>allumée</b> et que son <b>câble réseau</b> est branché. Puis touche <b>Réimprimer</b> sur la commande. Pour tester : <b>Réglages → Ticket de test</b>. En attendant, prépare la commande en lisant l’écran : tout y est.'],
     ['Trop de monde, on ne suit plus', 'Touche <b>Pause</b>, en petit en haut à droite. Le site n’accepte plus de nouvelles commandes ; celles déjà payées restent à préparer. Quand ça se calme, touche <b>Reprendre les commandes</b>.'],
     ['Il n’y a plus d’un produit', 'Touche <b>Plats épuisés</b>, puis le plat : il disparaît du site tout de suite. <b>Pense à le remettre</b> quand il revient (même bouton), sinon il reste caché.'],
     ['Un plat déjà payé manque', 'Appelle le client (son numéro est sur la commande) et propose-lui autre chose. S’il préfère être remboursé, préviens le <b>gérant</b> : il rembourse le plat depuis sa page, le client est recrédité sur sa carte.'],
@@ -566,6 +579,7 @@
       appel('epuise', { plat: pl.getAttribute('data-plat'), valeur: v }).then(function (j) { donnees.snack.epuises = j.epuises; pl.classList.toggle('cu-ep', v); }).catch(function (x) { alert(x.message); });
       return;
     }
+    if (t.closest('[data-actualiser]')) { location.reload(); return; }
     if (t.closest('[data-pause]')) {
       var p = !donnees.snack.pause;
       if (p && !confirm('Mettre les commandes en ligne en pause ? Les commandes déjà payées restent à préparer.')) return;
@@ -589,7 +603,14 @@
     var st = t.closest('[data-statut]');
     if (st && st.getAttribute('data-statut') === 'annulee' && !confirm('Le client n’est pas venu chercher la commande N° ' + c.numero + ' ? Elle sera annulée.')) return;
     if (st) { var nv = st.getAttribute('data-statut'); appel('statut', { id: c.id, statut: nv }).then(function () { c.statut = nv; afficher(); }); return; }
-    if (t.closest('[data-reimprimer]')) { imprimees[c.id] = false; imprimer(c, true); }
+    var ri = t.closest('[data-reimprimer]');
+    if (ri && !principale()) {
+      // Cet ecran n'imprime pas : on remet le ticket a imprimer, l'appareil qui imprime le sort.
+      ri.disabled = true; ri.textContent = 'Envoi…';
+      appel('liberer', { id: c.id, renvoyer: true }).then(function () { c.imprimee_le = null; afficher(); }).catch(function (x) { alert(x.message); afficher(); });
+      return;
+    }
+    if (ri) { imprimees[c.id] = false; imprimer(c, true); }
   });
   document.addEventListener('change', function (e) {
     if (e.target.matches('[data-imp]')) { reglage.impression = e.target.value; ecrire('ns-espace-reglage', reglage); }
@@ -626,15 +647,18 @@
   var aLaCaisse = function (c) { return c.paiement === 'sur_place' && c.statut === 'remise' ? c.total_cents : 0; };
   var aEncaisser = function (c) { return c.paiement === 'sur_place' && (c.statut === 'recue' || c.statut === 'prete') ? c.total_cents : 0; };
   var somme = function (l, f) { return l.reduce(function (t, c) { return t + f(c); }, 0); };
+  var MOYEN = { especes: 'espèces', carte: 'carte bancaire' };
   function afficherVentes() {
     var tout = ventes.commandes, l = tout.filter(function (c) { return !(c.paiement === 'sur_place' && c.statut === 'annulee'); });
     var ca = l.reduce(function (t, c) { return t + net(c); }, 0);
     var liv = l.filter(function (c) { return c.mode === 'livraison'; }).length;
     var carte = somme(l, parCarte), caisse = somme(l, aLaCaisse), reste = somme(l, aEncaisser);
+    var caisseEsp = somme(l, function (c) { return c.moyen_sur_place === 'especes' ? aLaCaisse(c) : 0; });
+    var caisseCb = somme(l, function (c) { return c.moyen_sur_place === 'carte' ? aLaCaisse(c) : 0; });
     $('[data-mode-test]').hidden = !ventes.test;
     $('[data-kpi]').innerHTML =
       '<div class="ns-compta ns-compta-carte"><small>Payé par carte sur le site</small><b>' + euros(carte) + '</b><span>' + l.filter(function (c) { return c.paiement !== 'sur_place'; }).length + ' commande(s), versé par Stripe sur le compte</span></div>' +
-      '<div class="ns-compta ns-compta-caisse"><small>Encaissé sur place, à la caisse</small><b>' + euros(caisse) + '</b><span>' + l.filter(function (c) { return aLaCaisse(c); }).length + ' commande(s) remise(s) au client' + (reste ? ' · encore ' + euros(reste) + ' à encaisser' : '') + '</span></div>' +
+      '<div class="ns-compta ns-compta-caisse"><small>Encaissé sur place, à la caisse</small><b>' + euros(caisse) + '</b><span>' + l.filter(function (c) { return aLaCaisse(c); }).length + ' commande(s) remise(s) au client' + (caisseEsp || caisseCb ? ' · dont ' + euros(caisseEsp) + ' en espèces et ' + euros(caisseCb) + ' par carte' : '') + (reste ? ' · encore ' + euros(reste) + ' à encaisser' : '') + '</span></div>' +
       [['Chiffre d’affaires', euros(ca)], ['Commandes', l.length], ['Panier moyen', l.length ? euros(Math.round(ca / l.length)) : '—'],
       ['Livraisons', liv + ' / ' + l.length], ['Remboursé', euros(l.reduce(function (t, c) { return t + c.rembourse_cents; }, 0))]]
       .map(function (k) { return '<div><small>' + k[0] + '</small><b>' + k[1] + '</b></div>'; }).join('');
@@ -644,7 +668,7 @@
         return '<tr><td>' + c.jour.slice(8, 10) + '/' + c.jour.slice(5, 7) + ' ' + hm(c.payee_le || c.cree_le) + '</td><td>' + c.numero + '</td><td>' + esc(c.nom) + '<br><small>' + esc(c.telephone) + '</small></td>' +
           '<td>' + (c.mode === 'livraison' ? 'Livraison' : 'À emporter') + '</td>' +
           '<td><small>' + c.lignes.map(function (x) { return x.qte + ' × ' + esc(x.n) + (x.resume ? ' (' + esc(x.resume) + ')' : ''); }).join(', ') + '</small></td>' +
-          '<td>' + euros(c.total_cents) + (c.paiement === 'sur_place' ? '<br><small class="ns-p-caisse">caisse' + (aEncaisser(c) ? ' · à encaisser' : '') + '</small>' : '<br><small class="ns-p-carte">carte</small>') + (c.rembourse_cents ? '<br><small>remb. ' + euros(c.rembourse_cents) + '</small>' : '') + '</td><td>' + esc(etatDe(c)) + '</td>' +
+          '<td>' + euros(c.total_cents) + (c.paiement === 'sur_place' ? '<br><small class="ns-p-caisse">caisse' + (MOYEN[c.moyen_sur_place] ? ' · ' + MOYEN[c.moyen_sur_place] : '') + (aEncaisser(c) ? ' · à encaisser' : '') + '</small>' : '<br><small class="ns-p-carte">carte</small>') + (c.rembourse_cents ? '<br><small>remb. ' + euros(c.rembourse_cents) + '</small>' : '') + '</td><td>' + esc(etatDe(c)) + '</td>' +
           '<td>' + (reste > 0 && c.paiement !== 'sur_place' ? '<button type="button" class="cu-bouton cu-discret" data-rembourser="' + c.id + '" data-reste="' + reste + '">Rembourser</button>' : '') + '</td></tr>';
       }).join('') || '<tr><td colspan="8">Aucune commande sur cette période.</td></tr>') + '</tbody>';
     if (periode && periode.nom === 'jour') sousCarte('ventes', euros(ca) + ' aujourd’hui');
@@ -654,7 +678,7 @@
     ['Jour', function (c) { return c.jour; }], ['Heure', function (c) { return hm(c.payee_le || c.cree_le); }], ['N°', function (c) { return c.numero; }],
     ['Client', function (c) { return c.nom; }], ['Téléphone', function (c) { return c.telephone; }],
     ['Mode', function (c) { return c.mode === 'livraison' ? 'Livraison' : 'À emporter'; }],
-    ['Paiement', function (c) { return c.paiement === 'sur_place' ? 'Sur place (caisse)' : 'Carte (site)'; }], ['Adresse', function (c) { return c.adresse || ''; }],
+    ['Paiement', function (c) { return c.paiement === 'sur_place' ? 'Sur place (' + (MOYEN[c.moyen_sur_place] || 'caisse') + ')' : 'Carte (site)'; }], ['Adresse', function (c) { return c.adresse || ''; }],
     ['Contenu', function (c) { return c.lignes.map(function (x) { return x.qte + ' x ' + x.n + (x.resume ? ' (' + x.resume + ')' : ''); }).join(' | '); }],
     ['Total TTC', function (c) { return (c.total_cents / 100).toFixed(2).replace('.', ','); }], ['Remboursé', function (c) { return (c.rembourse_cents / 100).toFixed(2).replace('.', ','); }],
     ['Net', function (c) { return ((c.total_cents - c.rembourse_cents) / 100).toFixed(2).replace('.', ','); }],

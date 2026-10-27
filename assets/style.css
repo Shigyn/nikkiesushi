@@ -465,6 +465,7 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 .especes-note { margin-top: 14px; padding: 14px 16px; border-radius: var(--r); background: var(--encre); border: 1px solid var(--ligne); }
 .especes-note b { display: block; color: var(--or-clair); font-size: 1rem; margin-bottom: 4px; }
 .especes-note p { margin: 0; color: var(--doux); font-size: .9rem; line-height: 1.5; }
+.especes-note .segment { margin: 10px 0 12px; }
 @media (max-width: 380px) { .reglements { grid-template-columns: 1fr; } }
 .paiement-stripe { margin-top: 14px; padding: 14px; border-radius: var(--r); background: var(--encre); border: 1px solid var(--ligne); min-height: 120px; }
 .ps-attente { margin: 0; color: var(--doux); font-size: .92rem; }
