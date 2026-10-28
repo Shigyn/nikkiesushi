@@ -81,6 +81,8 @@
           carteMenu('data-aide', 'aide', 'Aide') +
           (APPLI || !IMPRESSION ? '' : carteMenu('data-installer', 'installer', 'Installer l’appli')) +
           carteMenu('data-appliquer hidden', 'maj', 'Mise à jour prête') +
+          // En rouge, tout en bas : ouvrir le compte qui recoit les paiements par carte (28/10).
+          carteMenu('data-vue="paiement" data-rouge', 'paiement', 'Paiement en ligne') +
         '</nav></aside>' +
       '<main class="cu-zone">' +
         '<div class="cu-haut"><button type="button" class="cu-pause" data-actualiser title="Recharger l’écran"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONES.maj + '</svg><span>Actualiser</span></button>' +
@@ -95,6 +97,7 @@
           '<button type="button" class="cu-bouton" data-export>Export Excel</button></div></div>' +
           '<p class="ge-test" data-mode-test hidden><b>Mode test</b> : les paiements sont simulés, aucun argent réel n’est encaissé.</p>' +
           '<div class="ge-kpi" data-kpi></div><div class="ge-table-zone"><table class="ge-table" data-cmds></table></div></section>' +
+        '<section class="ns-ventes" data-ecran="paiement" hidden><div class="ge-tete"><h2>Paiement en ligne</h2></div><div data-paiement><p class="ge-aide">Chargement…</p></div></section>' +
       '</main>' +
       '<div class="cu-voile" data-voile hidden></div><div class="cu-panneau" data-panneau hidden></div>';
     montrer(vue);
@@ -118,6 +121,7 @@
     reglages: IMPRESSION ? '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'
       : '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     aide: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><path d="M12 17.5v.01"/>',
+    paiement: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>',
     installer: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/>',
     maj: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>'
   };
@@ -154,6 +158,7 @@
     sousCarte('fermetures', nf ? nf + ' prévue' + (nf > 1 ? 's' : '') : 'Aucune prévue');
     if (!ventes) sousCarte('ventes', 'Chiffre d’affaires, remboursements');
     sousCarte('installer', 'Pour la tablette Android');
+    sousCarte('paiement', 'Recevoir les paiements par carte');
     sousCarte('maj', 'Touche pour l’appliquer');
   }
   // Deux ecrans : les commandes en cours, et les remises du jour (sur demande).
@@ -538,7 +543,14 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (t.closest('[data-voile]') || t.closest('[data-fermer]')) { fermerPanneau(); return; }
-    var vu = t.closest('[data-vue]'); if (vu) { montrer(vu.getAttribute('data-vue')); if (vu.getAttribute('data-vue') === 'ventes') choisirPeriode(periode ? periode.nom : 'jour'); return; }
+    var vu = t.closest('[data-vue]'); if (vu) { montrer(vu.getAttribute('data-vue')); if (vu.getAttribute('data-vue') === 'ventes') choisirPeriode(periode ? periode.nom : 'jour'); if (vu.getAttribute('data-vue') === 'paiement') afficherPaiement(); return; }
+    var cp = t.closest('[data-copier]');
+    if (cp) {
+      var u = cp.getAttribute('data-copier');
+      (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { cp.textContent = 'Lien copié'; setTimeout(function () { cp.textContent = 'Copier le lien'; }, 2000); })
+        .catch(function () { cp.closest('.ns-paie-lien').querySelector('input').select(); });
+      return;
+    }
     if (t.closest('[data-epuises]')) { panneauEpuises(); return; }
     if (t.closest('[data-reglages]')) { panneauReglages(); return; }
     if (t.closest('[data-aide]')) { panneauAide(); return; }
@@ -649,20 +661,40 @@
   // restaurant, qui fait foi pour la compta. Ventes et export ne montrent donc
   // que les paiements en ligne ; un rappel compte les commandes sur place a saisir.
   // Rien n'est efface : elles restent en base et dans l'historique des commandes.
+  /* L'ecran Paiement en ligne : l'etat du compte Stripe du restaurant, le bouton
+     pour l'ouvrir ici, et son lien fixe avec QR (page /inscription/, qui
+     redemande un lien Stripe neuf a chaque fois) pour le faire sur un autre
+     appareil ou l'envoyer a l'associe. Meme ecran que chez Anas Grill. */
+  function qr(url) {
+    if (!window.qrcode) return '';
+    var q = window.qrcode(0, 'M'); q.addData(url); q.make();
+    return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  }
+  function afficherPaiement() {
+    appel('ventes', {}).then(function (j) {
+      var cs = j.compte, url = j.inscription || '';
+      var etat = !cs ? ['Pas encore ouvert', 'Ouvrez le compte Stripe du restaurant pour recevoir les paiements par carte du site directement sur votre compte bancaire : SIREN, RIB et pièce d’identité du président. Comptez 10 minutes.', 'Ouvrir mon compte de paiement']
+        : cs.erreur ? ['Compte introuvable', 'Prévenez Nicolas (LocWeb).', '']
+        : cs.encaisse && cs.vire && !(cs.manque || []).length ? ['✓ Actif', 'Les paiements par carte arrivent sur votre compte bancaire. Virements, factures et remboursements se suivent sur dashboard.stripe.com.', '']
+        : ['À compléter', 'Stripe attend encore des informations' + (cs.encaisse ? '' : ' avant d’ouvrir les paiements') + '.', 'Compléter mon compte'];
+      sousCarte('paiement', etat[0]);
+      $('[data-paiement]').innerHTML = (j.test ? '<p class="ge-test"><b>Mode test</b> : le lien ne marchera qu’au passage en réel.</p>' : '') +
+        '<div class="ns-paie"><div class="ns-compta ns-compta-stripe"><small>Compte de paiement</small><b>' + etat[0] + '</b><span>' + etat[1] + '</span>' +
+          (etat[2] ? '<button type="button" class="cu-bouton cu-feu" data-stripe-lien>' + etat[2] + '</button>' : '') + '</div>' +
+        (etat[2] && url ? '<div class="ns-paie-lien"><p class="ge-aide">Ou sur un autre appareil : scannez le QR, ou envoyez le lien à la personne qui remplit.</p>' +
+          '<div class="ge-insc-qr" aria-label="QR du lien d’inscription">' + qr(url) + '</div>' +
+          '<input class="ge-insc-url" readonly value="' + esc(url) + '" aria-label="Lien d’inscription">' +
+          '<div class="ge-insc-boutons"><button type="button" class="cu-bouton" data-copier="' + esc(url) + '">Copier le lien</button>' +
+          '<a class="cu-bouton cu-discret" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('Nikkie Sushi : ouvrir ici le compte qui reçoit les paiements en ligne (SIREN, RIB, pièce d’identité du président) : ' + url) + '">WhatsApp</a></div></div>' : '') + '</div>';
+    }).catch(function (e) { $('[data-paiement]').innerHTML = '<p class="ge-aide">' + esc(e.message) + '</p>'; });
+  }
   function afficherVentes() {
     var tout = ventes.commandes.filter(function (c) { return c.paiement !== 'sur_place'; }), l = tout;
     var ca = l.reduce(function (t, c) { return t + net(c); }, 0);
     var liv = l.filter(function (c) { return c.mode === 'livraison'; }).length;
     var carte = somme(l, parCarte);
     $('[data-mode-test]').hidden = !ventes.test;
-    var cs = ventes.compte;
-    var etatCompte = !cs ? ['Pas encore ouvert', 'Ouvrez votre compte Stripe pour recevoir les paiements par carte du site sur votre compte bancaire.', 'Ouvrir mon compte de paiement']
-      : cs.erreur ? ['Compte introuvable', 'Prévenez Nicolas (LocWeb).', '']
-      : cs.encaisse && cs.vire && !(cs.manque || []).length ? ['✓ Actif', 'Les paiements par carte arrivent sur votre compte bancaire.', '']
-      : ['À compléter', 'Stripe attend encore des informations' + (cs.encaisse ? '' : ' avant d’ouvrir les paiements') + '.', 'Compléter mon compte'];
     $('[data-kpi]').innerHTML =
-      '<div class="ns-compta ns-compta-stripe"><small>Recevoir les paiements en ligne</small><b>' + etatCompte[0] + '</b><span>' + etatCompte[1] + '</span>' +
-        (etatCompte[2] ? '<button type="button" class="cu-bouton cu-feu" data-stripe-lien>' + etatCompte[2] + '</button>' : '') + '</div>' +
       '<div class="ns-compta ns-compta-carte"><small>Payé par carte sur le site</small><b>' + euros(carte) + '</b><span>' + l.length + ' commande(s), versé par Stripe sur le compte</span></div>' +
       [['Chiffre d’affaires', euros(ca)], ['Commandes', l.length], ['Panier moyen', l.length ? euros(Math.round(ca / l.length)) : '—'],
       ['Livraisons', liv + ' / ' + l.length], ['Remboursé', euros(l.reduce(function (t, c) { return t + c.rembourse_cents; }, 0))]]

@@ -17,7 +17,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '28';
+const V = '29';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
 // Sans cle, le site repasse en apercu et plus rien n'arrive en cuisine : en apercu,
 // on prend toute seule la cle TEST du projet (meme garde-fou qu'Anas Grill, 22/10).
@@ -634,7 +634,24 @@ fs.writeFileSync(path.join(ICI, 'espace', 'index.html'), `<!doctype html>
 <div id="app"></div>
 <script>window.LOCWEB_CONFIG = { supabaseUrl: 'https://ibqawtgnucakzdldnitj.supabase.co', supabaseAnonKey: 'sb_publishable_rpLrUo4Cqnfl8zSohDqO0A_Q5Vkj2Hk' }; window.NS_V = '${V}';</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="../assets/espace.js?v=${V}" defer></script>
+</body></html>
+`);
+// La page /inscription/ : lien fixe du compte de paiement Stripe (QR dans l'espace pro).
+fs.mkdirSync(path.join(ICI, 'inscription'), { recursive: true });
+fs.writeFileSync(path.join(ICI, 'inscription', 'index.html'), `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Paiement en ligne — Nikkie Sushi</title>
+<meta name="theme-color" content="#0d0b0a"><link rel="icon" type="image/png" href="../photos/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Albert+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css?v=${V}"><link rel="stylesheet" href="../assets/espace.css?v=${V}">
+</head><body>
+<template data-logo><img class="logo" src="../photos/logo-nikkie-sushi.png" alt="Nikkie Sushi" width="520" height="515"></template>
+<div id="app"></div>
+<script>window.LOCWEB_CONFIG = { supabaseUrl: 'https://ibqawtgnucakzdldnitj.supabase.co', supabaseAnonKey: 'sb_publishable_rpLrUo4Cqnfl8zSohDqO0A_Q5Vkj2Hk' };</script>
+<script src="../assets/inscription.js?v=${V}" defer></script>
 </body></html>
 `);
 // La version : la tablette la compare pour se mettre a jour HORS service.

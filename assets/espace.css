@@ -255,3 +255,29 @@ body.gerant .ge-kpi { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)
 .ns-compta-stripe .cu-bouton { margin-top: 10px; }
 .ns-p-carte { color: #8fe0a8; } .ns-p-caisse { color: #ffc560; }
 @media (max-width: 700px) { .ns-compta { grid-column: 1 / -1; } }
+
+/* Paiement en ligne, tout en bas du menu, en rouge (2026-10-28, comme chez Anas Grill). */
+.cu-carte[data-rouge] { border-color: #d62828; background: #d62828; color: #fff; }
+.cu-carte[data-rouge]:hover { background: #b91f1f; border-color: #b91f1f; }
+.cu-carte[data-rouge] .cu-ico { background: rgba(255, 255, 255, .18); color: #fff; }
+.cu-carte[data-rouge] .cu-carte-txt small { color: rgba(255, 255, 255, .85); }
+.cu-carte[data-rouge].cu-carte-on { border-color: #fff; box-shadow: 0 0 0 1px #fff; }
+.ns-paie { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: start; margin-top: 16px; }
+.ns-paie .ns-compta { display: grid; gap: 6px; padding: 16px; border-radius: 14px; }
+.ns-paie .ns-compta small { color: var(--doux); }
+.ns-paie .ns-compta b { font-size: 1.4rem; }
+.ns-paie-lien { display: grid; gap: 10px; justify-items: start; padding: 16px; border-radius: 14px; border: 1px solid var(--ligne); background: #141210; }
+.ge-insc-qr { width: 100%; max-width: 180px; padding: 8px; border-radius: 10px; background: #fff; }
+.ge-insc-qr svg { display: block; width: 100%; height: auto; }
+.ge-insc-url { width: 100%; min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--ligne-forte, var(--ligne)); background: #0b0b0c; color: var(--doux); font: .8rem/1 inherit; }
+.ge-insc-boutons { display: flex; flex-wrap: wrap; gap: 8px; }
+.ge-insc-boutons a.cu-bouton { display: inline-flex; align-items: center; text-decoration: none; }
+
+/* La page /inscription/ (lien fixe du compte de paiement). */
+.insc { width: min(440px, 100% - 32px); margin: 0 auto; padding: 10vh 0 40px; display: grid; gap: 16px; text-align: center; justify-items: center; }
+.insc .logo { width: 110px; height: auto; }
+.insc h1 { margin: 0; font: 500 2rem/1.1 var(--serif); }
+.insc p { margin: 0; color: var(--doux); }
+.insc ul { margin: 0; padding: 14px 18px 14px 34px; text-align: left; border-radius: 14px; border: 1px solid var(--ligne); background: #141210; color: var(--texte); }
+.insc .cu-bouton { width: 100%; }
+.insc-err { color: #ffb4ac; }
