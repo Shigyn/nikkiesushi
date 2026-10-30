@@ -503,3 +503,7 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 90; pointer-event
 /* « Specialite de la maison » sur les tacos (22/10) */
 .badge-maison { background: linear-gradient(135deg, #efdba6, #d6b264); color: #1b1408; border-color: transparent; font-weight: 700; }
 .note-delai { margin: -4px 0 12px; font-size: .85rem; color: var(--or-clair); }
+
+/* Le lien LocWeb du pied de page : a peine plus visible, dans la couleur du site (2026-10-30). */
+.pied .lien-locweb { color: var(--or); opacity: .85; font-weight: 600; }
+.pied .lien-locweb:hover { opacity: 1; color: var(--or-clair); }

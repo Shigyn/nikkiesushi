@@ -17,7 +17,7 @@ const ICI = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)
 const PROD = process.env.PROD === '1';
 const URL_SITE = PROD ? 'https://www.nikkiesushi.com/' : 'https://shigyn.github.io/nikkiesushi/';
 const PHOTOS = JSON.parse(fs.readFileSync(path.join(ICI, '_source', 'photos.json'), 'utf8'));
-const V = '29';
+const V = '30';
 // Paiement Stripe des que la cle publique est donnee (meme schema qu'Anas Grill).
 // Sans cle, le site repasse en apercu et plus rien n'arrive en cuisine : en apercu,
 // on prend toute seule la cle TEST du projet (meme garde-fou qu'Anas Grill, 22/10).
@@ -188,7 +188,7 @@ ${corps(r)}
   </div>
   <div class="cadre pied-bas">
     <span>© ${new Date().getFullYear()} ${E.raison}</span>
-    <span><a href="${r}mentions-legales/">Mentions légales</a> · <a href="${r}cgv/">Conditions de vente</a> · <a href="${r}confidentialite/">Confidentialité</a>${PROD ? ' · Site réalisé par <a href="https://locweb.fr" target="_blank" rel="noopener">LocWeb</a>' : ''}</span>
+    <span><a href="${r}mentions-legales/">Mentions légales</a> · <a href="${r}cgv/">Conditions de vente</a> · <a href="${r}confidentialite/">Confidentialité</a>${PROD ? ' · Site réalisé par <a class="lien-locweb" href="https://locweb.fr" target="_blank" rel="noopener">LocWeb</a>' : ''}</span>
   </div>
 </footer>
 
